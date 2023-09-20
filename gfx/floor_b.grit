@@ -1,0 +1,14 @@
+# Symbol name
+-s floor_b
+
+# Set the warning/log level to 3
+-W3
+
+# Set the transparent color to 000000 (rrggbb hex)
+-gT000000
+
+# Tile image
+-gb
+
+# Set the bit depth to 8
+-gB8
