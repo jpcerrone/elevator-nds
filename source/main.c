@@ -74,10 +74,12 @@ int main(void) {
 			bgScroll(bg3, 0,1);
 		}
 		bgUpdate();
+		consoleClear();
 		updateAndRender(&input, &state);
 		for(int i=0; i < 10; i++){
 			drawSprite(&state.sprites[i]);
 		}
+		//iprintf("floor: %d", state.currentFloor);
 		oamUpdate(&oamSub);
 	}
 

@@ -21,8 +21,11 @@
 #include "audio.c"
 */
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof(array[0]))
-/*
+static const float DELTA = 0.01666666666;
+
+
 void setNextDirection(GameState *state) {
+	iprintf("d%d", state->direction);
     // Get next destination
     int currentNext = state->currentFloor;
     int currentMin = INT32_MAX;
@@ -50,7 +53,7 @@ void setNextDirection(GameState *state) {
         state->moving = true;
     }
 }
-
+/*
 int getScore(float mood, bool pickingUp) {
     int score = 0;
     switch (ceil(mood / MOOD_TIME)) {
@@ -205,7 +208,7 @@ void initGameState(GameState *state) {
 	for(int y=0;y < 10; y++){
 		int x = SCREEN_WIDTH/2 - 16;
 		x += (y%2 == 0) ? 14 : -14;
-		state->buttonSprites[y] = createSprite(&state->images.bigButton, (struct Sprite*)&state->sprites, &state->spriteCount, x, y * 16 + 8, 0);
+		state->buttonSprites[9 - y] = createSprite(&state->images.bigButton, (struct Sprite*)&state->sprites, &state->spriteCount, x, y * 16 + 8, 0);
 	}
     /*
     state->images.ui = loadBMP("../spr/ui.bmp", state->readFileFunction);
@@ -319,9 +322,10 @@ void resetGame(GameState *state) {
     state->moving = false;
     state->dropOffFloor = -1;
     state->currentLevel = 0;
+
+    memset(&state->doorTimer, 0, sizeof(state->doorTimer));
 /*
     state->spawnTimer = {true, 1.5f}; // First guy should appear fast
-    state->doorTimer = {};
     state->dropOffTimer = {};
     state->circleFocusTimer = {};
     state->flashTextTimer = {};
@@ -378,7 +382,7 @@ void updateAndRender(GameInput* input, GameState* state) {
             drawImage(renders, ARRAY_SIZE(renders), &state->images.titleLabels, screenWidth/2.0f, screenHeight/2.0f,0, 0, false ,3, true);
 	    int flashPerSecond = 2; // IMPROVEMNT this doesnt really work for other numbers
 	    if (state->flashTextTimer.active){
-		state->flashTextTimer.time -= flashPerSecond*delta;
+		state->flashTextTimer.time -= flashPerSecond*DELTA;
 	    } else if(state->flashTextTimer.time <= 0){
 		    state->flashTextTimer = {};
 	    }
@@ -395,7 +399,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 		    	playMusic(state->clips, &state->audioFiles.music, 0.5);
 			return;
 		}
-                state->transitionToBlackTimer.time -= delta;
+                state->transitionToBlackTimer.time -= DELTA;
 		break; // The actual transition is handled after the switch statement
             }
             for (int i = 0; i < 10; i++) {
@@ -410,7 +414,7 @@ void updateAndRender(GameInput* input, GameState* state) {
         }break;        
         case GAME:{ /*
 		if (state->transitionFromBlackTimer.active) {
-			state->transitionFromBlackTimer.time -= delta;
+			state->transitionFromBlackTimer.time -= DELTA;
 			if (state->transitionFromBlackTimer.time <= 0){
 				state->transitionFromBlackTimer.active = false;
 			}
@@ -422,17 +426,17 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    	int radius = 13;
 		if (state->circleFocusTimer.active){
 			if (state->circleFocusTimer.time > 2.5) {
-				state->circleFocusTimer.time -= delta;
+				state->circleFocusTimer.time -= DELTA;
 				return;
 		    } else if (state->circleFocusTimer.time > 2.2) {
-			state->circleFocusTimer.time -= delta;
+			state->circleFocusTimer.time -= DELTA;
 			float focusPercentage = (state->circleFocusTimer.time- 2.2f)*1.0f/0.3f; 
 			drawFocusCircle(bitMapMemory, state->circleSpot.x, state->circleSpot.y, (int)(focusPercentage*screenHeight/2 + (1 - focusPercentage) * radius), screenWidth, screenHeight);
 			return;
 
 			}
 			else if (state->circleFocusTimer.time > 1.4) {
-				state->circleFocusTimer.time -= delta;
+				state->circleFocusTimer.time -= DELTA;
 				if (state->circleFocusTimer.time < 1.8 && !state->failSoundPlaying){
 					playSound(state->clips, &state->audioFiles.fail, 0.5);
 					state->failSoundPlaying = true;
@@ -440,13 +444,13 @@ void updateAndRender(GameInput* input, GameState* state) {
 				return;
 			}
 			else if (state->circleFocusTimer.time > 1.0) {
-				state->circleFocusTimer.time -= delta;
+				state->circleFocusTimer.time -= DELTA;
 				float focusPercentage = (state->circleFocusTimer.time-1.0f)/0.4f; 
 				drawFocusCircle(bitMapMemory, state->circleSpot.x, state->circleSpot.y, (int)(focusPercentage*radius), screenWidth, screenHeight);
 				return;
 			}
 			else if (state->circleFocusTimer.time > 0){
-				state->circleFocusTimer.time -= delta;
+				state->circleFocusTimer.time -= DELTA;
 				return;
 			}
 			else if (state->circleFocusTimer.time < 0) {
@@ -461,7 +465,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 		}	    
             // Doors
             if (state->doorTimer.active) {
-                state->doorTimer.time -= delta;
+                state->doorTimer.time -= DELTA;
 		if (state->doorTimer.time < 0) {
 			pickAndPlaceGuys(state);
 			state->doorTimer = {};
@@ -473,7 +477,7 @@ void updateAndRender(GameInput* input, GameState* state) {
             if (!(state->doorTimer.active)) { // Don't update patience when opening doors
                 for (int i = 0; i < MAX_GUYS_ON_SCREEN; i++) {
                     if (state->guys[i].active) {
-                        state->guys[i].mood -= delta;
+                        state->guys[i].mood -= DELTA;
                         if (state->guys[i].mood <= 0.0) {
 				stopAllAudio(state->clips);
 				playSound(state->clips, &state->audioFiles.brake, 0.5);
@@ -490,7 +494,7 @@ void updateAndRender(GameInput* input, GameState* state) {
             }
 #ifndef DONTSPAWN
             // Spawn
-            state->spawnTimer.time -= delta;
+            state->spawnTimer.time -= DELTA;
             if (state->spawnTimer.time <= 0) {
                 state->spawnTimer.time = SPAWN_TIMES[state->currentLevel];
                 spawnNewGuy(state->guys, state->fullFloors, state->currentFloor);
@@ -498,7 +502,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 #endif
             // Drop Off
             if (state->dropOffTimer.active) {
-                state->dropOffTimer.time -= delta;
+                state->dropOffTimer.time -= DELTA;
             }
             if (state->dropOffTimer.time < 0) {
                 state->dropOffTimer = {};
@@ -515,16 +519,16 @@ void updateAndRender(GameInput* input, GameState* state) {
 			state->buttonSprites[i]->frame = state->floorStates[i];
 		}
 	}
-/*
+
             // Move and calculate getting to floors
             if (!(state->doorTimer.active)) {
                 if (state->moving) {
-                    state->elevatorSpeed *= 1 + delta / 2;
+                    state->elevatorSpeed *= 1 + DELTA / 2;
                     if (state->direction == 1) {
-                        state->elevatorPosY += (int)((float)state->elevatorSpeed * delta);
+                        state->elevatorPosY += (int)((float)state->elevatorSpeed * DELTA);
                     }
                     else if (state->direction == -1) {
-                        state->elevatorPosY -= (int)((float)state->elevatorSpeed * delta);
+                        state->elevatorPosY -= (int)((float)state->elevatorSpeed * DELTA);
                     }
                     if (state->direction == -1) {
                         if (state->elevatorPosY < floorsY[state->currentFloor - 1]) {
@@ -535,9 +539,11 @@ void updateAndRender(GameInput* input, GameState* state) {
                                 state->moving = false;
                                 state->direction = 0; // Not strictly needed I think
                                 state->floorStates[state->currentDestination] = false;
-                                state->doorTimer = {true, DOOR_TIME};
-				playSound(state->clips, &state->audioFiles.arrival, 0.5);
-				playSound(state->clips, &state->audioFiles.doorOpen, 0.5);
+				state->buttonSprites[state->currentDestination]->frame = state->floorStates[state->currentDestination];
+                                //state->doorTimer.active = true;
+                                //state->doorTimer.time = DOOR_TIME;
+				//playSound(state->clips, &state->audioFiles.arrival, 0.5);
+				//playSound(state->clips, &state->audioFiles.doorOpen, 0.5);
                             }
                         }
                     }
@@ -550,9 +556,11 @@ void updateAndRender(GameInput* input, GameState* state) {
                                 state->moving = false;
                                 state->direction = 0; // Not strictly needed I think
                                 state->floorStates[state->currentDestination] = false;
-                                state->doorTimer = {true, DOOR_TIME};
-                            	playSound(state->clips, &state->audioFiles.arrival, 0.5);
-				playSound(state->clips, &state->audioFiles.doorOpen, 0.5);
+				state->buttonSprites[state->currentDestination]->frame = state->floorStates[state->currentDestination];
+                                //state->doorTimer.active = true;
+                                //state->doorTimer.time = DOOR_TIME;
+                            	//playSound(state->clips, &state->audioFiles.arrival, 0.5);
+				//playSound(state->clips, &state->audioFiles.doorOpen, 0.5);
 				}
                         }
                     }
@@ -562,6 +570,7 @@ void updateAndRender(GameInput* input, GameState* state) {
                 }
             }
 
+	    /*
             // Draw elevator stuff
 	    Vector2i screenCenter = { screenWidth / 2, screenHeight / 2 };
             Vector2i floorIndicatorOffset = { 15, 40 };
@@ -659,7 +668,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 				Vector2i startingPos = sum(Vector2i{screenWidth/16, screenHeight/2}, state->floatingNumbers[i].startingPosOffset);
 			   drawNumber(state->floatingNumbers[i].value,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, (float)startingPos.x, (float)startingPos.y + state->floatingNumbers[i].offsetY - floorYOffset,5, 1, BLACK);
 			}
-			   state->floatingNumbers[i].offsetY += delta*floatingSpeed;
+			   state->floatingNumbers[i].offsetY += DELTA*floatingSpeed;
 			   if(state->floatingNumbers[i].offsetY > yLimit){
 				   state->floatingNumbers[i] = {};
 			   }
@@ -683,7 +692,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, 128, 5,9, 1);
 	    int flashesPerSec = 2; 
 	    if (state->flashTextTimer.active){
-		state->flashTextTimer.time -= delta;
+		state->flashTextTimer.time -= DELTA;
 	      if (state->flashTextTimer.time < 0){
 			state->flashTextTimer = {};
 		    }
@@ -722,15 +731,13 @@ void updateAndRender(GameInput* input, GameState* state) {
             OutputDebugString(floorsString);
             OutputDebugStringW(L"\n");
 #endif
-
-#ifdef SHOWELEVATORSTATS
-            char buffer[100];
-            sprintf_s(buffer, "y: %d | curFl: %d | curDes: %d | spd: %f | dir:%d | mov:%d\n",
-                state->elevatorPosY, state->currentFloor, state->currentDestination, state->elevatorSpeed, state->direction, state->moving);
-
-            OutputDebugString(buffer);
+*/
+#if 1
+	//iprintf("mov%d", state->moving);
+	    iprintf("y: %d | curFl: %d | curDes: %d | spd: %f", state->elevatorPosY, state->currentFloor, state->currentDestination, state->elevatorSpeed);
+	    //iprintf("y: %d | curFl: %d | curDes: %d | spd: %f | dir:%d | mov:%d", state->elevatorPosY, state->currentFloor, state->currentDestination, state->elevatorSpeed, state->direction, state->moving);
 #endif
-	    */
+	    
         }break;        
         case SCORE:{
            /* 
@@ -739,7 +746,7 @@ void updateAndRender(GameInput* input, GameState* state) {
             }
 
 		if (state->scoreTimer.active) {
-		    state->scoreTimer.time -= delta;
+		    state->scoreTimer.time -= DELTA;
 		    drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, screenWidth/2.0f, screenHeight/2.0f + 20,0, 2, 0, 1, true);
 		    drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, screenWidth/2.0f, screenHeight/2.0f - 20,0, 3, 0, 1 , true);
 		    drawNumber(state->score,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, screenWidth / 2.0f, screenHeight / 2.0f + 10,0, 1, GREY, true);
@@ -750,7 +757,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 		    }
 		}
 		else if (state->transitionToBlackTimer.active) {
-		    state->transitionToBlackTimer.time -= delta;
+		    state->transitionToBlackTimer.time -= DELTA;
 			if(state->transitionToBlackTimer.time < 0){
 				state->transitionToBlackTimer = {};
 			}}
