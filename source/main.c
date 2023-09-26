@@ -21,6 +21,7 @@ int main(void) {
 	videoSetMode(MODE_5_2D);
 	videoSetModeSub(MODE_0_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);
+	vramSetBankB(VRAM_B_MAIN_SPRITE);
 	vramSetBankD(VRAM_D_SUB_SPRITE);
 	
 	consoleDemoInit();
@@ -34,8 +35,11 @@ int main(void) {
 	dmaCopy(topScreenBitmap, bgGetGfxPtr(bg2), topScreenBitmapLen);
 	// Sprites
 	
-	oamInit(&oamSub, SpriteMapping_1D_64, false); // Note: I think this means the first row is 32bits wide 
+	oamInit(&oamSub, SpriteMapping_1D_128, false); // Why 128? -> https://www.tumblr.com/altik-0/24833858095/nds-development-some-info-on-sprites?redirect_to=%2Faltik-0%2F24833858095%2Fnds-development-some-info-on-sprites&source=blog_view_login_wall
+	oamInit(&oamMain, SpriteMapping_1D_128, false); 
+
 	dmaCopy(buttonBigPal, SPRITE_PALETTE_SUB, buttonBigPalLen);
+	dmaCopy(buttonBigPal, SPRITE_PALETTE, buttonBigPalLen); // Using same pallette for now
 
 	//float delta = 0.01666666666;
 	touchPosition touch;
@@ -64,12 +68,16 @@ int main(void) {
 		swiWaitForVBlank(); // TODO Check the orer of evth that follows
 		updateAndRender(&input, &state);
 		consoleClear();
-		for(int i=0; i < 10; i++){
-			drawSprite(&state.sprites[i]);
+		for(int i=0; i < state.spriteCountMain; i++){
+			drawSprite(&state.spritesMain[i]);
+		}
+		for(int i=0; i < state.spriteCountSub; i++){
+			drawSprite(&state.spritesSub[i]);
 		}
 		//iprintf("floor: %d", state.currentFloor);
 		bgUpdate();
 		oamUpdate(&oamSub);
+		oamUpdate(&oamMain);
 	}
 
 }

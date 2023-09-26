@@ -105,6 +105,8 @@ typedef struct GameState {
 
     struct {
 	struct Image bigButton;
+	struct Image door;
+	struct Image doorBot;
 	/*
         Image ui;
         Image button;
@@ -118,7 +120,6 @@ typedef struct GameState {
         Image vigasB;
         Image vigasF;
         Image arrows;
-        Image door;
         Image numbersFont3px;
         Image numbersFont4px;
 	Image uiLabels;
@@ -126,8 +127,12 @@ typedef struct GameState {
 	Image rectangle;
 	*/
     } images;
- 	struct Sprite sprites[20]; 
-	int spriteCount;
+ 	struct Sprite spritesMain[20]; 
+ 	struct Sprite spritesSub[20]; 
+	int spriteCountMain;
+	int spriteCountSub;
+	struct Sprite* doorSpriteBot;
+	struct Sprite* doorSpriteTop;
 	struct Sprite* buttonSprites[10];
 /*
     struct audioFiles_t {

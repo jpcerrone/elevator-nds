@@ -17,6 +17,7 @@ struct Sprite{
 	float y;
 	int frame;
 	int index;
+	OamState* screen;
 	/*
 	bool flip;
 	int scale;
@@ -28,6 +29,6 @@ struct Sprite{
 
 struct Image loadImage(uint8_t* dataPtr, int width, int height, int frames);
 
-struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* spriteCount, int x, int y, int frame);
+struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* spriteCount, int x, int y, int frame, OamState* screen);
 
 void drawSprite(struct Sprite* sprite);

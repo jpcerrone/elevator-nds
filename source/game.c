@@ -11,6 +11,8 @@
 #include "graphics.h"
 
 #include <button_big.h>
+#include <door.h>
+#include <doorBot.h>
 /*
 #include "vector2i.c"
 #include "graphics.c"
@@ -22,7 +24,7 @@
 */
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof(array[0]))
 static const float DELTA = 0.01666666666;
-
+static const struct Vector2i SCREEN_CENTER = { {SCREEN_WIDTH / 2}, {SCREEN_HEIGHT / 2 }};
 
 void setNextDirection(GameState *state) {
 	//iprintf("d%d", state->direction);
@@ -203,12 +205,21 @@ void initGameState(GameState *state) {
     memset(state->floatingNumbers, 0, sizeof(state->floatingNumbers));
 
 */
+   	memset(state->spritesSub, 0, sizeof(state->spritesSub)); // CHECK THIS
+	memset(state->spritesMain, 0, sizeof(state->spritesMain)); // CHECK THIS
+
+	struct Vector2i doorPos = {{SCREEN_CENTER.x - 67}, {SCREEN_CENTER.y - 52}};
+    	state->images.door = loadImage((uint8_t*)doorTiles, 64, 64, 2);
+	state->doorSpriteTop = createSprite(&state->images.door, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y, 0, &oamMain);
+	state->images.doorBot = loadImage((uint8_t*)doorBotTiles, 64, 64, 2);
+	state->doorSpriteBot = createSprite(&state->images.doorBot, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y +37, 0, &oamMain);
+
     	state->images.bigButton = loadImage((uint8_t*)buttonBigTiles, 32, 32, 2);
-	memset(state->sprites, 0, sizeof(state->sprites)); // CHECK THIS
+	
 	for(int y=0;y < 10; y++){
 		int x = SCREEN_WIDTH/2 - 16;
 		x += (y%2 == 0) ? 14 : -14;
-		state->buttonSprites[9 - y] = createSprite(&state->images.bigButton, (struct Sprite*)&state->sprites, &state->spriteCount, x, y * 16 + 8, 0);
+		state->buttonSprites[9 - y] = createSprite(&state->images.bigButton, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, x, y * 16 + 8, 0, &oamSub);
 	}
     /*
     state->images.ui = loadBMP("../spr/ui.bmp", state->readFileFunction);
@@ -223,7 +234,6 @@ void initGameState(GameState *state) {
     state->images.vigasF = loadBMP("../spr/vigasF.bmp", state->readFileFunction);
     state->images.elevatorF = loadBMP("../spr/elevator_f.bmp", state->readFileFunction);
     state->images.arrows = loadBMP("../spr/arrow.bmp", state->readFileFunction, 2);
-    state->images.door = loadBMP("../spr/door.bmp", state->readFileFunction, 2);
     state->images.numbersFont3px = loadBMP("../spr/m3x6Numbers.bmp", state->readFileFunction, 10);
     state->images.numbersFont4px = loadBMP("../spr/4x6Numbers.bmp", state->readFileFunction, 10);
     state->images.uiLabels = loadBMP("../spr/uiLabels.bmp", state->readFileFunction, 4);
@@ -463,16 +473,18 @@ void updateAndRender(GameInput* input, GameState* state) {
 
 			}
 		}	    
+		*/
             // Doors
             if (state->doorTimer.active) {
                 state->doorTimer.time -= DELTA;
 		if (state->doorTimer.time < 0) {
-			pickAndPlaceGuys(state);
-			state->doorTimer = {};
-			playSound(state->clips, &state->audioFiles.doorClose, 0.5);
+			//pickAndPlaceGuys(state);
+			state->doorTimer.active = 0;
+			state->doorTimer.time = 0;
+			//playSound(state->clips, &state->audioFiles.doorClose, 0.5);
 		    }
             }
-            
+           /* 
             // Mood
             if (!(state->doorTimer.active)) { // Don't update patience when opening doors
                 for (int i = 0; i < MAX_GUYS_ON_SCREEN; i++) {
@@ -540,8 +552,8 @@ void updateAndRender(GameInput* input, GameState* state) {
                                 state->direction = 0; // Not strictly needed I think
                                 state->floorStates[state->currentDestination] = false;
 				state->buttonSprites[state->currentDestination]->frame = state->floorStates[state->currentDestination];
-                                //state->doorTimer.active = true;
-                                //state->doorTimer.time = DOOR_TIME;
+                                state->doorTimer.active = true;
+                                state->doorTimer.time = DOOR_TIME;
 				//playSound(state->clips, &state->audioFiles.arrival, 0.5);
 				//playSound(state->clips, &state->audioFiles.doorOpen, 0.5);
                             }
@@ -557,8 +569,8 @@ void updateAndRender(GameInput* input, GameState* state) {
                                 state->direction = 0; // Not strictly needed I think
                                 state->floorStates[state->currentDestination] = false;
 				state->buttonSprites[state->currentDestination]->frame = state->floorStates[state->currentDestination];
-                                //state->doorTimer.active = true;
-                                //state->doorTimer.time = DOOR_TIME;
+                                state->doorTimer.active = true;
+                                state->doorTimer.time = DOOR_TIME;
                             	//playSound(state->clips, &state->audioFiles.arrival, 0.5);
 				//playSound(state->clips, &state->audioFiles.doorOpen, 0.5);
 				}
@@ -572,7 +584,6 @@ void updateAndRender(GameInput* input, GameState* state) {
 
 	    
             // Draw elevator stuff
-	    struct Vector2i screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 	    /*
             Vector2i floorIndicatorOffset = { 15, 40 };
 
@@ -583,16 +594,17 @@ void updateAndRender(GameInput* input, GameState* state) {
                 floorYOffset = (FLOOR_SEPARATION - floorYOffset) * -1; // Hack to handle negative mod operation.
             }
 	    	bgSetScroll(3, 0,-floorYOffset); // Scroll BG3 layer
+		int doorFrame = (state->doorTimer.active) ? 0 : 1;
+
+            state->doorSpriteTop->frame = doorFrame; 
+	    state->doorSpriteBot->frame = doorFrame; 
 	/*	
             drawImage(renders, ARRAY_SIZE(renders), &state->images.vigasB, 0, 16, 1);
             drawImage(renders, ARRAY_SIZE(renders), &state->images.elevator, (float)(screenWidth - state->images.elevator.width) / 2,
                 (float)(screenHeight - 16 - state->images.elevator.height) / 2 + 16, 2);
             drawImage(renders, ARRAY_SIZE(renders), &state->images.elevatorF, (float)(screenWidth - state->images.elevatorF.width) / 2,
                 (float)(screenHeight - 16 - state->images.elevatorF.height) / 2 + 16, 5); // Layers 3 and 4 reserved for guys
-            int doorFrame = (state->doorTimer.active) ? 0 : 1;
-            drawImage(renders, ARRAY_SIZE(renders), &state->images.door, (float)(screenWidth - state->images.elevatorF.width) / 2,
-                (float)(screenHeight - 16 - state->images.elevatorF.height) / 2 + 16, 6, doorFrame);
-            drawImage(renders, ARRAY_SIZE(renders), &state->images.floor, 0, (float)16 - floorYOffset, 7);
+                        drawImage(renders, ARRAY_SIZE(renders), &state->images.floor, 0, (float)16 - floorYOffset, 7);
             drawImage(renders, ARRAY_SIZE(renders), &state->images.vigasF, 0, 16, 7);
 
             if (state->dropOffTimer.active) {
