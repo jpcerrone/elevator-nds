@@ -3,25 +3,16 @@
 
 #include "game.h"
 #include "graphics.h"
+#include "vector2i.c"
 
 // BG
 #include <floor_b.h>
+#include <topScreen.h>
 
 // Sprites
 #include <button_big.h>
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof(array[0]))
-
-typedef struct Vector2i{
-union {
-        int x;
-        int width;
-    };
-    union {
-        int y;
-        int height;
-    };
-} Vector2i;
 
 int main(void) {
 	GameState state = {};
@@ -35,9 +26,12 @@ int main(void) {
 	consoleDemoInit();
 
 	int bg3 = bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 0 /*the 2k offset into vram the tile map will be placed*/,0 /* the 16k offset into vram the tile graphics data will be placed*/);
+	//iprintf("bg%d", bg3);
 	dmaCopy(floor_bBitmap, bgGetGfxPtr(bg3), floor_bBitmapLen);
 	dmaCopy(floor_bPal, BG_PALETTE, floor_bPalLen); 
 
+	int bg2 = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, 4 /*the 2k offset into vram the tile map will be placed*/,0 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(topScreenBitmap, bgGetGfxPtr(bg2), topScreenBitmapLen);
 	// Sprites
 	
 	oamInit(&oamSub, SpriteMapping_1D_64, false); // Note: I think this means the first row is 32bits wide 
@@ -68,18 +62,13 @@ int main(void) {
 
 		// Rendering
 		swiWaitForVBlank(); // TODO Check the orer of evth that follows
-		scanKeys();
-		int pressed = keysDown();
-		if(pressed & KEY_UP){
-			bgScroll(bg3, 0,1);
-		}
-		bgUpdate();
-		consoleClear();
 		updateAndRender(&input, &state);
+		consoleClear();
 		for(int i=0; i < 10; i++){
 			drawSprite(&state.sprites[i]);
 		}
 		//iprintf("floor: %d", state.currentFloor);
+		bgUpdate();
 		oamUpdate(&oamSub);
 	}
 

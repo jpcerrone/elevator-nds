@@ -6,7 +6,7 @@
 #include <nds.h>
 #include <stdio.h>
 
-
+#include "vector2i.c"
 #include "game.h"
 #include "graphics.h"
 
@@ -25,7 +25,7 @@ static const float DELTA = 0.01666666666;
 
 
 void setNextDirection(GameState *state) {
-	iprintf("d%d", state->direction);
+	//iprintf("d%d", state->direction);
     // Get next destination
     int currentNext = state->currentFloor;
     int currentMin = INT32_MAX;
@@ -570,18 +570,20 @@ void updateAndRender(GameInput* input, GameState* state) {
                 }
             }
 
-	    /*
+	    
             // Draw elevator stuff
-	    Vector2i screenCenter = { screenWidth / 2, screenHeight / 2 };
+	    struct Vector2i screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+	    /*
             Vector2i floorIndicatorOffset = { 15, 40 };
 
             fillBGWithColor(bitMapMemory, screenWidth, screenHeight, BLACK);
+	    */
             int floorYOffset = state->elevatorPosY % (FLOOR_SEPARATION); 
-            if (floorYOffset > 160) {
+            if (floorYOffset > FLOOR_SEPARATION/2) {
                 floorYOffset = (FLOOR_SEPARATION - floorYOffset) * -1; // Hack to handle negative mod operation.
             }
-	    drawImage(renders, ARRAY_SIZE(renders), &state->images.floorB, 0, (float)16 - floorYOffset,0);
-			
+	    	bgSetScroll(3, 0,-floorYOffset); // Scroll BG3 layer
+	/*	
             drawImage(renders, ARRAY_SIZE(renders), &state->images.vigasB, 0, 16, 1);
             drawImage(renders, ARRAY_SIZE(renders), &state->images.elevator, (float)(screenWidth - state->images.elevator.width) / 2,
                 (float)(screenHeight - 16 - state->images.elevator.height) / 2 + 16, 2);
@@ -734,7 +736,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 */
 #if 1
 	//iprintf("mov%d", state->moving);
-	    iprintf("y: %d | curFl: %d | curDes: %d | spd: %f", state->elevatorPosY, state->currentFloor, state->currentDestination, state->elevatorSpeed);
+	    //iprintf("y: %d | curFl: %d | curDes: %d | spd: %f", state->elevatorPosY, state->currentFloor, state->currentDestination, state->elevatorSpeed);
 	    //iprintf("y: %d | curFl: %d | curDes: %d | spd: %f | dir:%d | mov:%d", state->elevatorPosY, state->currentFloor, state->currentDestination, state->elevatorSpeed, state->direction, state->moving);
 #endif
 	    
