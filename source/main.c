@@ -66,8 +66,8 @@ int main(void) {
 
 		// Rendering
 		swiWaitForVBlank(); // TODO Check the orer of evth that follows
-		updateAndRender(&input, &state);
 		consoleClear();
+		updateAndRender(&input, &state);
 		for(int i=0; i < state.spriteCountMain; i++){
 			drawSprite(&state.spritesMain[i]);
 		}
