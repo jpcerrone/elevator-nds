@@ -9,7 +9,7 @@ struct Image loadImage(uint8_t* dataPtr, int width, int height, int frames){
 	return newImage;
 }
 
-struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* spriteCount, int x, int y, int frame, OamState* screen){
+struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* spriteCount, int x, int y, int frame, OamState* screen, bool visible, int priority){
 	// sassert(spriteCount < MAX_SPRITES, "Sprite count already at maximum value");	
 	sprites[*spriteCount].x = x;
 	sprites[*spriteCount].y = y;
@@ -17,6 +17,8 @@ struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* s
 	sprites[*spriteCount].frame = frame;
 	sprites[*spriteCount].index = *spriteCount;
 	sprites[*spriteCount].screen = screen;
+	sprites[*spriteCount].visible = visible;
+	sprites[*spriteCount].priority = priority;
 	SpriteSize size;
 	if (image->width == 64 && image->height == 64){
 		size = SpriteSize_64x64;
@@ -37,7 +39,7 @@ void drawSprite(struct Sprite* sprite){
 	}
 	else{
 		size = SpriteSize_32x32;
-	}oamSet(sprite->screen, sprite->index, sprite->x, sprite->y, 0 , 0, size, SpriteColorFormat_16Color, sprite->oamPtr, -1, false, false, false, false, false); // TODO replace 32x32
+	}oamSet(sprite->screen, sprite->index, sprite->x, sprite->y, sprite->priority , 0, size, SpriteColorFormat_16Color, sprite->oamPtr, -1, false, !sprite->visible, false, false, false); // TODO replace 32x32
 }
 
 

@@ -33,8 +33,11 @@ int main(void) {
 
 	int bg2 = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, 4 /*the 2k offset into vram the tile map will be placed*/,0 /* the 16k offset into vram the tile graphics data will be placed*/);
 	dmaCopy(topScreenBitmap, bgGetGfxPtr(bg2), topScreenBitmapLen);
-	// Sprites
 	
+	bgSetPriority(bg3, 3);
+	bgSetPriority(bg2, 2);
+
+	// Sprites
 	oamInit(&oamSub, SpriteMapping_1D_128, false); // Why 128? -> https://www.tumblr.com/altik-0/24833858095/nds-development-some-info-on-sprites?redirect_to=%2Faltik-0%2F24833858095%2Fnds-development-some-info-on-sprites&source=blog_view_login_wall
 	oamInit(&oamMain, SpriteMapping_1D_128, false); 
 

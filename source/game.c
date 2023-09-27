@@ -15,6 +15,7 @@
 #include <button_big.h>
 #include <door.h>
 #include <doorBot.h>
+#include <guy.h>
 /*
 #include "vector2i.c"
 #include "graphics.c"
@@ -161,7 +162,6 @@ void spawnNewGuy(Guy *guys, bool *fullFloors, int currentFloor) {
     if (areAllFloorsSave1Full(fullFloors) || areMaxGuysOnScreen(guys)) {
         return;
     }
-	iprintf("hey");
     int randomGuyIdx = rand() % MAX_GUYS_ON_SCREEN;
     int randomCurrent = rand() % 10;
     int randomDest = rand() % 10;
@@ -213,17 +213,24 @@ void initGameState(GameState *state) {
 
 	struct Vector2i doorPos = {{SCREEN_CENTER.x - 67}, {SCREEN_CENTER.y - 52}};
     	state->images.door = loadImage((uint8_t*)doorTiles, 64, 64, 2);
-	state->doorSpriteTop = createSprite(&state->images.door, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y, 0, &oamMain);
+	state->doorSpriteTop = createSprite(&state->images.door, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y, 0, &oamMain, true, 0);
 	state->images.doorBot = loadImage((uint8_t*)doorBotTiles, 64, 64, 2);
-	state->doorSpriteBot = createSprite(&state->images.doorBot, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y +37, 0, &oamMain);
+	state->doorSpriteBot = createSprite(&state->images.doorBot, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y +37, 0, &oamMain, true, 0);
 
     	state->images.bigButton = loadImage((uint8_t*)buttonBigTiles, 32, 32, 2);
 	
 	for(int y=0;y < 10; y++){
 		int x = SCREEN_WIDTH/2 - 16;
 		x += (y%2 == 0) ? 14 : -14;
-		state->buttonSprites[9 - y] = createSprite(&state->images.bigButton, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, x, y * 16 + 8, 0, &oamSub);
+		state->buttonSprites[9 - y] = createSprite(&state->images.bigButton, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, x, y * 16 + 8, 0, &oamSub, true, 0);
 	}
+
+	state->images.guy = loadImage((uint8_t*)guyTiles, 64, 64, 4);
+	struct Vector2i elevatorGuysOrigin = {{SCREEN_CENTER.x - 50}, {SCREEN_CENTER.y - 57}}; 
+	for(int i=0; i < 5; i++){
+		state->elevatorGuySprites[i] = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, elevatorGuysOrigin.x - elevatorSpotsPos[i].x, elevatorGuysOrigin.y - elevatorSpotsPos[i].y, 0, &oamMain, false, i < 2 ? 1 : 0);
+	}
+
     /*
     state->images.ui = loadBMP("../spr/ui.bmp", state->readFileFunction);
     state->images.button = loadBMP("../spr/button.bmp", state->readFileFunction, 2);
@@ -382,10 +389,6 @@ void playMusic(AudioClip *clips, AudioFile *file, float volume = 1.0f){
 }
 */
 void updateAndRender(GameInput* input, GameState* state) {
-	/*
-   	Render renders[100] = {};
-
-	*/
 	if (!state->isInitialized) {
 		initGameState(state);
 		resetGame(state); // REMOVE THIS AFTER ENABLING MENU
@@ -428,7 +431,10 @@ void updateAndRender(GameInput* input, GameState* state) {
                 }
             } */
         }break;        
-        case GAME:{ /*
+        case GAME:{ 
+
+			  /*
+
 		if (state->transitionFromBlackTimer.active) {
 			state->transitionFromBlackTimer.time -= DELTA;
 			if (state->transitionFromBlackTimer.time <= 0){
@@ -641,29 +647,36 @@ void updateAndRender(GameInput* input, GameState* state) {
 				(float)state->images.button.height + state->images.button.height * j + 5,2,  1, state->floorStates[j] ? BLACK : GREY);
             }
             
-            // Display guy
+            // Display guys
             drawImage(renders, ARRAY_SIZE(renders), &state->images.ui, 0, 16);
+	    */
+	    	for(int i=0; i < 5; i++){ // Clear elevator sprites, we'll populate them in the next loop
+		    state->elevatorGuySprites[i]->visible = false; 
+		}
             for (int j = 0; j < MAX_GUYS_ON_SCREEN; j++) {
-                if (state->guys[j].active) {
+		if (state->guys[j].active) {
                     int mood = 3 - ceil(state->guys[j].mood / MOOD_TIME);
                     if (state->guys[j].onElevator) {
-                        Vector2i posInElevator = elevatorSpotsPos[state->guys[j].elevatorSpot];
+			    state->elevatorGuySprites[state->guys[j].elevatorSpot]->visible = true;
+			/*
 			int layer = (state->guys[j].elevatorSpot < 2) ? 3 : 4;
-                        drawImage(renders, ARRAY_SIZE(renders), &state->images.guy, (float)screenCenter.x + posInElevator.x,
-                            (float)screenCenter.y + posInElevator.y,layer, mood);
-			Vector2i digitMinPos = sum(sum(screenCenter, posInElevator), floorIndicatorOffset); 
+                        Vector2i digitMinPos = sum(sum(screenCenter, posInElevator), floorIndicatorOffset); 
 			Vector2i digitMaxPos = sum(digitMinPos, Vector2i{6, 12} ); 
                         drawImage(renders, ARRAY_SIZE(renders), &state->images.rectangle, digitMinPos.x - 1.0f, digitMinPos.y -1.0f, layer - 1);
 			drawNumber(state->guys[j].desiredFloor,renders, ARRAY_SIZE(renders),&state->images.numbersFont3px, (float)digitMinPos.x, (float)digitMinPos.y,layer,  2);
+			*/
                     }
                     else {
+			    /*
 			if ((state->guys[j].currentFloor * FLOOR_SEPARATION >= state->elevatorPosY - FLOOR_SEPARATION / 2) && // If they're on the floor
 				(state->guys[j].currentFloor * FLOOR_SEPARATION <= state->elevatorPosY + FLOOR_SEPARATION / 2)) {
 				Vector2i waitingGuyPos = { 10, 16 - floorYOffset + 40 };
 				drawImage(renders, ARRAY_SIZE(renders), &state->images.guy, (float)waitingGuyPos.x, (float)waitingGuyPos.y,8, mood);
 				drawNumber(state->guys[j].desiredFloor,renders, ARRAY_SIZE(renders), &state->images.numbersFont3px, (float)waitingGuyPos.x + floorIndicatorOffset.x, (float)waitingGuyPos.y + floorIndicatorOffset.y,8, 2);
 			}
+			*/
 			// Draw UI guys
+			/*
                         Vector2i offsetInBox = { -2, -1 };
                         drawImage(renders, ARRAY_SIZE(renders), &state->images.uiGuy, state->images.uiGuy.height * 8.0f + offsetInBox.x,
                             (float)state->images.uiGuy.height + state->images.uiGuy.height * state->guys[j].currentFloor + offsetInBox.y,
@@ -678,9 +691,11 @@ void updateAndRender(GameInput* input, GameState* state) {
                         }
                         drawImage(renders, ARRAY_SIZE(renders), &state->images.arrows, state->images.uiGuy.height * 8.0f + arrowOffsetInBox.x,
                             (float)state->images.uiGuy.height + state->images.uiGuy.height * state->guys[j].currentFloor,1, arrowFrame);
+			    */
                     }
                 }
             }
+	    /*
 	    // Draw floating numbers
 	float yLimit = screenHeight/2.0f;
 	int floatingSpeed = 40;

@@ -2,7 +2,7 @@
 //#include "platform.h"
 #include "graphics.h"
 //#include "math.h"
-//#include "vector2i.c"
+#include "vector2i.c"
 //#include "audio.c"
 
 static const uint32_t GREY = 0xFF686868;
@@ -16,15 +16,15 @@ static int floorsY[11] = { 0, 320, 640, 960, 1280, 1600, 1920, 2240, 2560, 2880,
 const static int REQUIRED_SCORE = 3000;
 
 //static const char SCORE_PATH[MAX_PATH] = "maxScore";// MAX_PATH might be windows only
-/*
-static const Vector2i elevatorSpotsPos[ELEVATOR_SPOTS] = {
-    {-1, -30},
-    {-22, -30},
-    {-31, -37},
-    {11, -37},
-    { -10, -37},
+
+static const struct Vector2i elevatorSpotsPos[ELEVATOR_SPOTS] = {
+    {{-1}, {-30}},
+    {{-22}, {-30}},
+    {{-31}, {-37}},
+    {{11}, {-37}},
+    {{ -10}, {-37}},
 };
-*/
+
 static const float SPAWN_TIMES[13] = { 8, 6.5f, 5.0f, 5.5f, 4.0f, 3.6f, 3.2f, 3, 2.9f, 2.8f, 2.7f, 2.6f, 2.5f };
 static const float MOOD_TIME = 4.0f;
 static const float DOOR_TIME = 0.5f;
@@ -107,6 +107,7 @@ typedef struct GameState {
 	struct Image bigButton;
 	struct Image door;
 	struct Image doorBot;
+	struct Image guy;
 	/*
         Image ui;
         Image button;
@@ -114,7 +115,6 @@ typedef struct GameState {
         Image uiGuy;
         Image elevator;
         Image elevatorF;
-        Image guy;
         Image floorB;
         Image floor;
         Image vigasB;
@@ -134,6 +134,7 @@ typedef struct GameState {
 	struct Sprite* doorSpriteBot;
 	struct Sprite* doorSpriteTop;
 	struct Sprite* buttonSprites[10];
+	struct Sprite* elevatorGuySprites[5];
 /*
     struct audioFiles_t {
 	    AudioFile music;
