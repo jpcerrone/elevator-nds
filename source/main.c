@@ -43,7 +43,8 @@ int main(void) {
 
 	dmaCopy(buttonBigPal, SPRITE_PALETTE_SUB, buttonBigPalLen);
 	dmaCopy(buttonBigPal, SPRITE_PALETTE, buttonBigPalLen); // Using same pallette for now
-
+//Backdrop Color
+// TODO: Color 0 of BG Palette 0 is used as backdrop color. This color is displayed if an area of the screen is not covered by any non-transparent BG or OBJ dots.
 	//float delta = 0.01666666666;
 	touchPosition touch;
 	bool lastFramePenDown = false;

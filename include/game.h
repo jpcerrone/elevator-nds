@@ -108,6 +108,8 @@ typedef struct GameState {
 	struct Image door;
 	struct Image doorBot;
 	struct Image guy;
+	struct Image numbersFont6px;
+	struct Image numbersFont6pxGrey;
 	/*
         Image ui;
         Image button;
@@ -127,14 +129,17 @@ typedef struct GameState {
 	Image rectangle;
 	*/
     } images;
- 	struct Sprite spritesMain[20]; 
- 	struct Sprite spritesSub[20]; 
+ 	struct Sprite spritesMain[64]; 
+ 	struct Sprite spritesSub[64]; 
 	int spriteCountMain;
 	int spriteCountSub;
-	struct Sprite* doorSpriteBot;
+	struct Sprite* doorSpriteBot; // TODO merge into sprites struct?
 	struct Sprite* doorSpriteTop;
 	struct Sprite* buttonSprites[10];
-	struct Sprite* elevatorGuySprites[5];
+	struct Sprite* guySprites[MAX_GUYS_ON_SCREEN];
+	struct Sprite* dropOffGuySprite;
+	struct Sprite* floorIndicatorSprites[2];
+	struct Sprite* scoreSprites[6];
 /*
     struct audioFiles_t {
 	    AudioFile music;

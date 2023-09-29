@@ -16,6 +16,9 @@
 #include <door.h>
 #include <doorBot.h>
 #include <guy.h>
+#include <numbersFont6px.h>
+#include <numbersFont6pxGrey.h>
+
 /*
 #include "vector2i.c"
 #include "graphics.c"
@@ -226,25 +229,34 @@ void initGameState(GameState *state) {
 	}
 
 	state->images.guy = loadImage((uint8_t*)guyTiles, 64, 64, 4);
-	struct Vector2i elevatorGuysOrigin = {{SCREEN_CENTER.x - 50}, {SCREEN_CENTER.y - 57}}; 
-	for(int i=0; i < 5; i++){
-		state->elevatorGuySprites[i] = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, elevatorGuysOrigin.x - elevatorSpotsPos[i].x, elevatorGuysOrigin.y - elevatorSpotsPos[i].y, 0, &oamMain, false, i < 2 ? 1 : 0);
+	for(int i=0; i < MAX_GUYS_ON_SCREEN; i++){
+		state->guySprites[i] = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 0);
 	}
-
+	state->dropOffGuySprite = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2 - 32, 0, &oamMain, false, 0);
+	flipSprite(state->dropOffGuySprite);
+	state->images.numbersFont6px = loadImage((uint8_t*)numbersFont6pxTiles, 16, 16, 10);
+	state->images.numbersFont6pxGrey = loadImage((uint8_t*)numbersFont6pxGreyTiles, 16, 16, 10);
+	for(int i =0; i < ARRAY_SIZE(state->floorIndicatorSprites); i++){
+		state->floorIndicatorSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, true, 0);
+	}
+	dmaCopy(numbersFont6pxGreyPal, SPRITE_PALETTE + 16, numbersFont6pxGreyPalLen); // Using same pallette for now
+	//SPRITE_PALETTE[3] = *numbersFont6pxGreyPal;
+	for(int i =0; i < ARRAY_SIZE(state->scoreSprites); i++){
+		state->scoreSprites[i] = createSprite(&state->images.numbersFont6pxGrey, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, true, 0);
+		state->scoreSprites[i]->paletteIdx = 1;
+	}
     /*
     state->images.ui = loadBMP("../spr/ui.bmp", state->readFileFunction);
     state->images.button = loadBMP("../spr/button.bmp", state->readFileFunction, 2);
     state->images.uiBottom = loadBMP("../spr/ui-bottom.bmp", state->readFileFunction);
     state->images.uiGuy = loadBMP("../spr/ui-guy.bmp", state->readFileFunction, 4);
     state->images.elevator = loadBMP("../spr/elevator.bmp", state->readFileFunction);
-    state->images.guy = loadBMP("../spr/guy.bmp", state->readFileFunction, 4);
     state->images.floorB = loadBMP("../spr/floor_b.bmp", state->readFileFunction);
     state->images.floor = loadBMP("../spr/floor.bmp", state->readFileFunction);
     state->images.vigasB = loadBMP("../spr/vigasB.bmp", state->readFileFunction);
     state->images.vigasF = loadBMP("../spr/vigasF.bmp", state->readFileFunction);
     state->images.elevatorF = loadBMP("../spr/elevator_f.bmp", state->readFileFunction);
     state->images.arrows = loadBMP("../spr/arrow.bmp", state->readFileFunction, 2);
-    state->images.numbersFont3px = loadBMP("../spr/m3x6Numbers.bmp", state->readFileFunction, 10);
     state->images.numbersFont4px = loadBMP("../spr/4x6Numbers.bmp", state->readFileFunction, 10);
     state->images.uiLabels = loadBMP("../spr/uiLabels.bmp", state->readFileFunction, 4);
     state->images.titleLabels = loadBMP("../spr/titleLabels.bmp", state->readFileFunction, 2);
@@ -621,14 +633,9 @@ void updateAndRender(GameInput* input, GameState* state) {
                 (float)(screenHeight - 16 - state->images.elevatorF.height) / 2 + 16, 5); // Layers 3 and 4 reserved for guys
                         drawImage(renders, ARRAY_SIZE(renders), &state->images.floor, 0, (float)16 - floorYOffset, 7);
             drawImage(renders, ARRAY_SIZE(renders), &state->images.vigasF, 0, 16, 7);
-
-            if (state->dropOffTimer.active) {
-                if ((state->dropOffFloor * FLOOR_SEPARATION >= state->elevatorPosY - FLOOR_SEPARATION / 2) &&
-                    (state->dropOffFloor * FLOOR_SEPARATION <= state->elevatorPosY + FLOOR_SEPARATION / 2)) {
-                    drawImage(renders, ARRAY_SIZE(renders), &state->images.guy, 10, (float)16 - floorYOffset + 40,8, 0, 1);
-                }
-            }
-
+*/
+            
+/*
             // -- Elevator numbers
             if (state->currentFloor == 10) {
                 drawNumber(1, renders, ARRAY_SIZE(renders), &state->images.numbersFont3px, (float)screenCenter.x - 37, (float)screenCenter.y + 38 ,6);
@@ -650,16 +657,25 @@ void updateAndRender(GameInput* input, GameState* state) {
             // Display guys
             drawImage(renders, ARRAY_SIZE(renders), &state->images.ui, 0, 16);
 	    */
-	    	for(int i=0; i < 5; i++){ // Clear elevator sprites, we'll populate them in the next loop
-		    state->elevatorGuySprites[i]->visible = false; 
-		}
+	    for(int i = 0;  i < MAX_GUYS_ON_SCREEN; i++){
+		    state->guySprites[i]->visible = false;
+	    }
+		state->dropOffGuySprite->visible = false;
+	    if (state->dropOffTimer.active) {
+                if ((state->dropOffFloor * FLOOR_SEPARATION >= state->elevatorPosY - FLOOR_SEPARATION / 2) && (state->dropOffFloor * FLOOR_SEPARATION <= state->elevatorPosY + FLOOR_SEPARATION / 2)) {
+			state->dropOffGuySprite->visible = true;
+                }
+            }
+	    struct Vector2i elevatorGuysOrigin = {{SCREEN_CENTER.x - 50}, {SCREEN_CENTER.y - 57}}; 
             for (int j = 0; j < MAX_GUYS_ON_SCREEN; j++) {
 		if (state->guys[j].active) {
-                    int mood = 3 - ceil(state->guys[j].mood / MOOD_TIME);
+                    //int mood = 3 - ceil(state->guys[j].mood / MOOD_TIME);
                     if (state->guys[j].onElevator) {
-			    state->elevatorGuySprites[state->guys[j].elevatorSpot]->visible = true;
+			    state->guySprites[j]->visible = true;
+			    state->guySprites[j]->x = elevatorGuysOrigin.x - elevatorSpotsPos[state->guys[j].elevatorSpot].x;
+			    state->guySprites[j]->y = elevatorGuysOrigin.y - elevatorSpotsPos[state->guys[j].elevatorSpot].y;
+			    state->guySprites[j]->priority = (state->guys[j].elevatorSpot < 2) ? 1 : 0;
 			/*
-			int layer = (state->guys[j].elevatorSpot < 2) ? 3 : 4;
                         Vector2i digitMinPos = sum(sum(screenCenter, posInElevator), floorIndicatorOffset); 
 			Vector2i digitMaxPos = sum(digitMinPos, Vector2i{6, 12} ); 
                         drawImage(renders, ARRAY_SIZE(renders), &state->images.rectangle, digitMinPos.x - 1.0f, digitMinPos.y -1.0f, layer - 1);
@@ -667,14 +683,15 @@ void updateAndRender(GameInput* input, GameState* state) {
 			*/
                     }
                     else {
-			    /*
 			if ((state->guys[j].currentFloor * FLOOR_SEPARATION >= state->elevatorPosY - FLOOR_SEPARATION / 2) && // If they're on the floor
 				(state->guys[j].currentFloor * FLOOR_SEPARATION <= state->elevatorPosY + FLOOR_SEPARATION / 2)) {
-				Vector2i waitingGuyPos = { 10, 16 - floorYOffset + 40 };
-				drawImage(renders, ARRAY_SIZE(renders), &state->images.guy, (float)waitingGuyPos.x, (float)waitingGuyPos.y,8, mood);
-				drawNumber(state->guys[j].desiredFloor,renders, ARRAY_SIZE(renders), &state->images.numbersFont3px, (float)waitingGuyPos.x + floorIndicatorOffset.x, (float)waitingGuyPos.y + floorIndicatorOffset.y,8, 2);
+				struct Vector2i waitingGuyPos = { {10}, {16 + floorYOffset + 40 }};
+				state->guySprites[j]->visible = true;
+				state->guySprites[j]->x = waitingGuyPos.x;
+				state->guySprites[j]->y = waitingGuyPos.y;
+				//drawImage(renders, ARRAY_SIZE(renders), &state->images.guy, (float)waitingGuyPos.x, (float)waitingGuyPos.y,8, mood);
+				//drawNumber(state->guys[j].desiredFloor,renders, ARRAY_SIZE(renders), &state->images.numbersFont3px, (float)waitingGuyPos.x + floorIndicatorOffset.x, (float)waitingGuyPos.y + floorIndicatorOffset.y,8, 2);
 			}
-			*/
 			// Draw UI guys
 			/*
                         Vector2i offsetInBox = { -2, -1 };
@@ -712,18 +729,13 @@ void updateAndRender(GameInput* input, GameState* state) {
 			   }
 		   }
 	   }
-	   
+*/	   
              // -- Score
-	    drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, 4, 5, 9);
-            drawNumber(state->score,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, 29, 5,9,1, GREY);
+	    displayNumber(state->score, state->scoreSprites, ARRAY_SIZE(state->scoreSprites),  &state->images.numbersFont6pxGrey, 44, SCREEN_HEIGHT - 20, 0, 1, false, 7.0);
     
 	    // -- Current Floor
-	    int xOffset = 0;
-	    if (state->currentFloor == 10){
-		    xOffset = -2;
-	    }
-
-	    drawNumber(state->currentFloor,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, screenWidth/2.0f + 2, 5.0f,9, 1, BLACK, true);
+	    displayNumber(state->currentFloor, state->floorIndicatorSprites, ARRAY_SIZE(state->floorIndicatorSprites),  &state->images.numbersFont6px, SCREEN_WIDTH/2.0f + 1, SCREEN_HEIGHT - 16 -4.0f, 0, 1, true, 7.0);
+	    /*
             // --Level
 	    drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, 128, 5,9, 1);
 	    int flashesPerSec = 2; 
