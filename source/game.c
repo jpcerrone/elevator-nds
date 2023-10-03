@@ -504,27 +504,33 @@ void updateAndRender(GameInput* input, GameState* state) {
 			//playSound(state->clips, &state->audioFiles.doorClose, 0.5);
 		    }
             }
-           /* 
+            
             // Mood
             if (!(state->doorTimer.active)) { // Don't update patience when opening doors
                 for (int i = 0; i < MAX_GUYS_ON_SCREEN; i++) {
                     if (state->guys[i].active) {
                         state->guys[i].mood -= DELTA;
                         if (state->guys[i].mood <= 0.0) {
-				stopAllAudio(state->clips);
-				playSound(state->clips, &state->audioFiles.brake, 0.5);
-				state->circleFocusTimer= {true, CIRCLE_TIME};
+				/* added in nds for testing, TODO remove
+				 */
+				resetGame(state);
+				return;
+				 /* 
+				 */
+				//stopAllAudio(state->clips);
+				//playSound(state->clips, &state->audioFiles.brake, 0.5);
+				//state->circleFocusTimer= {true, CIRCLE_TIME};
 				if (state->guys[i].onElevator){
-					state->circleSpot = sum(sum(Vector2i{screenWidth/2, screenHeight/2}, elevatorSpotsPos[state->guys[i].elevatorSpot]), Vector2i{11,32});
+					//state->circleSpot = sum(sum(Vector2i{screenWidth/2, screenHeight/2}, elevatorSpotsPos[state->guys[i].elevatorSpot]), Vector2i{11,32});
 				} else{
-				state->circleSpot ={ screenWidth-27, (state->guys[i].currentFloor+1)*16 +7};
+				//state->circleSpot ={ screenWidth-27, (state->guys[i].currentFloor+1)*16 +7};
 				}
                     return;
                         }
                     }
                 }
             }
-	    */
+	    
 #ifndef DONTSPAWN
             // Spawn
             state->spawnTimer.time -= DELTA;
@@ -665,7 +671,8 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    struct Vector2i elevatorGuysOrigin = {{SCREEN_CENTER.x - 50}, {SCREEN_CENTER.y - 57}}; 
             for (int j = 0; j < MAX_GUYS_ON_SCREEN; j++) {
 		if (state->guys[j].active) {
-                    //int mood = 3 - ceil(state->guys[j].mood / MOOD_TIME);
+                    int mood = 3 - ceil(state->guys[j].mood / MOOD_TIME);
+		    state->guySprites[j]->frame = mood;
                     if (state->guys[j].onElevator) {
 			    state->guySprites[j]->visible = true;
 			    state->guySprites[j]->x = elevatorGuysOrigin.x - elevatorSpotsPos[state->guys[j].elevatorSpot].x;
@@ -747,7 +754,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    }
 	    */
 	    // Debug stuff
-#if 0
+#if 1
             for (int i = 0; i < MAX_GUYS_ON_SCREEN; i++) {
                 if (state->guys[i].active) { 
 			iprintf("[g%d: c:%d d:%d e:%d]\n ", i, state->guys[i].currentFloor, state->guys[i].desiredFloor, state->guys[i].onElevator);
@@ -808,7 +815,6 @@ void updateAndRender(GameInput* input, GameState* state) {
         }break;
     }
 	/*
-	renderImages(renders, ARRAY_SIZE(renders), bitMapMemory, screenWidth, screenHeight);
 	// Transitions         
            if (state->transitionToBlackTimer.active) {
                 drawRectangle(bitMapMemory, screenWidth, screenHeight, 0, 0, screenWidth, (int)(screenHeight* (1-state->transitionToBlackTimer.time)), BLACK);
