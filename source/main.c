@@ -6,6 +6,7 @@
 #include "vector2i.c"
 
 // BG
+#include <floor_b.c>
 #include <floor_b.h>
 #include <topScreen.h>
 
@@ -18,7 +19,7 @@ int main(void) {
 	GameState state = {};
 
 	powerOn(POWER_ALL_2D);
-	videoSetMode(MODE_5_2D);
+	videoSetMode(MODE_0_2D);
 	videoSetModeSub(MODE_0_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
@@ -26,14 +27,16 @@ int main(void) {
 	
 	consoleDemoInit();
 
-	int bg3 = bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 0 /*the 2k offset into vram the tile map will be placed*/,0 /* the 16k offset into vram the tile graphics data will be placed*/);
-	//iprintf("bg%d", bg3);
-	dmaCopy(floor_bBitmap, bgGetGfxPtr(bg3), floor_bBitmapLen);
-	dmaCopy(floor_bPal, BG_PALETTE, floor_bPalLen); 
+	dmaCopy(gameColors, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
 
-	int bg2 = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, 4 /*the 2k offset into vram the tile map will be placed*/,0 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(topScreenBitmap, bgGetGfxPtr(bg2), topScreenBitmapLen);
-	
+	int bg3 = bgInit(3, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(floor_bTiles, bgGetGfxPtr(bg3), floor_bTilesLen);
+	dmaCopy(floor_bMap, bgGetMapPtr(bg3),  floor_bMapLen);
+
+	int bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x256, 2 /*the 2k offset into vram the tile map will be placed*/,2 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(topScreenTiles, bgGetGfxPtr(bg2), topScreenTilesLen);
+	dmaCopy(topScreenMap, bgGetMapPtr(bg2),  topScreenMapLen);
+
 	bgSetPriority(bg3, 3);
 	bgSetPriority(bg2, 2);
 
@@ -41,10 +44,10 @@ int main(void) {
 	oamInit(&oamSub, SpriteMapping_1D_128, false); // Why 128? -> https://www.tumblr.com/altik-0/24833858095/nds-development-some-info-on-sprites?redirect_to=%2Faltik-0%2F24833858095%2Fnds-development-some-info-on-sprites&source=blog_view_login_wall
 	oamInit(&oamMain, SpriteMapping_1D_128, false); 
 
-	dmaCopy(buttonBigPal, SPRITE_PALETTE_SUB, buttonBigPalLen);
-	dmaCopy(buttonBigPal, SPRITE_PALETTE, buttonBigPalLen); // Using same pallette for now
+	dmaCopy(gameColors, SPRITE_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColors)); // TODO move to game code
+	dmaCopy(gameColors, SPRITE_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
+	dmaCopy(gameColorsInv, SPRITE_PALETTE + 16, sizeof(uint16_t) * ARRAY_SIZE(gameColorsInv));
 //Backdrop Color
-// TODO: Color 0 of BG Palette 0 is used as backdrop color. This color is displayed if an area of the screen is not covered by any non-transparent BG or OBJ dots.
 	//float delta = 0.01666666666;
 	touchPosition touch;
 	bool lastFramePenDown = false;
@@ -66,19 +69,19 @@ int main(void) {
 		}
 		
 		lastFramePenDown = penDown;	
-		//iprintf("\x1b[6;5HTouch x = %04X, %04X\n", touch.rawx, touch.px);
 
 		// Rendering
 		swiWaitForVBlank(); // TODO Check the orer of evth that follows
-		consoleClear();
+		//consoleClear();
 		updateAndRender(&input, &state);
+		
 		for(int i=0; i < state.spriteCountMain; i++){
 			drawSprite(&state.spritesMain[i]);
 		}
 		for(int i=0; i < state.spriteCountSub; i++){
 			drawSprite(&state.spritesSub[i]);
 		}
-		//iprintf("floor: %d", state.currentFloor);
+		
 		bgUpdate();
 		oamUpdate(&oamSub);
 		oamUpdate(&oamMain);

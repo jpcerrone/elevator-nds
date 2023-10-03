@@ -17,7 +17,6 @@
 #include <doorBot.h>
 #include <guy.h>
 #include <numbersFont6px.h>
-#include <numbersFont6pxGrey.h>
 
 /*
 #include "vector2i.c"
@@ -235,14 +234,11 @@ void initGameState(GameState *state) {
 	state->dropOffGuySprite = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2 - 32, 0, &oamMain, false, 0);
 	flipSprite(state->dropOffGuySprite);
 	state->images.numbersFont6px = loadImage((uint8_t*)numbersFont6pxTiles, 16, 16, 10);
-	state->images.numbersFont6pxGrey = loadImage((uint8_t*)numbersFont6pxGreyTiles, 16, 16, 10);
 	for(int i =0; i < ARRAY_SIZE(state->floorIndicatorSprites); i++){
 		state->floorIndicatorSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, true, 0);
 	}
-	dmaCopy(numbersFont6pxGreyPal, SPRITE_PALETTE + 16, numbersFont6pxGreyPalLen); // Using same pallette for now
-	//SPRITE_PALETTE[3] = *numbersFont6pxGreyPal;
 	for(int i =0; i < ARRAY_SIZE(state->scoreSprites); i++){
-		state->scoreSprites[i] = createSprite(&state->images.numbersFont6pxGrey, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, true, 0);
+		state->scoreSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, true, 0);
 		state->scoreSprites[i]->paletteIdx = 1;
 	}
     /*
@@ -620,8 +616,8 @@ void updateAndRender(GameInput* input, GameState* state) {
             if (floorYOffset > FLOOR_SEPARATION/2) {
                 floorYOffset = (FLOOR_SEPARATION - floorYOffset) * -1; // Hack to handle negative mod operation.
             }
-	    	bgSetScroll(3, 0,-floorYOffset); // Scroll BG3 layer
-		int doorFrame = (state->doorTimer.active) ? 0 : 1;
+	    bgSetScroll(3, 0,-floorYOffset); // Scroll BG3 layer
+	    int doorFrame = (state->doorTimer.active) ? 0 : 1;
 
             state->doorSpriteTop->frame = doorFrame; 
 	    state->doorSpriteBot->frame = doorFrame; 
@@ -731,7 +727,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 	   }
 */	   
              // -- Score
-	    displayNumber(state->score, state->scoreSprites, ARRAY_SIZE(state->scoreSprites),  &state->images.numbersFont6pxGrey, 44, SCREEN_HEIGHT - 20, 0, 1, false, 7.0);
+	    displayNumber(state->score, state->scoreSprites, ARRAY_SIZE(state->scoreSprites),  &state->images.numbersFont6px, 44, SCREEN_HEIGHT - 20, 0, 1, false, 7.0);
     
 	    // -- Current Floor
 	    displayNumber(state->currentFloor, state->floorIndicatorSprites, ARRAY_SIZE(state->floorIndicatorSprites),  &state->images.numbersFont6px, SCREEN_WIDTH/2.0f + 1, SCREEN_HEIGHT - 16 -4.0f, 0, 1, true, 7.0);
@@ -751,7 +747,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    }
 	    */
 	    // Debug stuff
-#if 1
+#if 0
             for (int i = 0; i < MAX_GUYS_ON_SCREEN; i++) {
                 if (state->guys[i].active) { 
 			iprintf("[g%d: c:%d d:%d e:%d]\n ", i, state->guys[i].currentFloor, state->guys[i].desiredFloor, state->guys[i].onElevator);

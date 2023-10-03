@@ -8,7 +8,10 @@
 -gTFF00FF
 
 # Tile image
--gb
+-gt
+
+# Include map in output. Enables tile-mapping of the image.
+-m
 
 # Set the bit depth to 8
--gB8
+-gB4

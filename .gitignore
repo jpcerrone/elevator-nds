@@ -1,4 +1,5 @@
 build/
+spr/
 *.elf
 *.nds
 *.pdn

@@ -23,6 +23,7 @@ include $(DEVKITARM)/ds_rules
 # AUDIO is a list of directories containing audio to be converted by maxmod
 # ICON is the image used to create the game icon, leave blank to use default rule
 # NITRO is a directory that will be accessible via NitroFS
+# BG_HACK is a directory which contains hand-modified version of the floor_b background that changes its background color to magenta.
 #---------------------------------------------------------------------------------
 TARGET   := $(shell basename $(CURDIR))
 BUILD    := build
@@ -32,6 +33,7 @@ DATA     := data
 GRAPHICS := gfx
 AUDIO    :=
 ICON     :=
+BG_HACK	 := bgHack
 
 # specify a directory which contains the nitro filesystem
 # this is relative to the Makefile
@@ -161,6 +163,12 @@ endif
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@mkdir -p $@
+
+	# Copy hand-modified floor_b background into the build folder.
+	# background color for it is changed from magenta (what grit outputs) to black	
+	cp $(BG_HACK)/floor_b.c $(BUILD)/floor_b.c
+	cp $(BG_HACK)/floor_b.h $(BUILD)/floor_b.h	
+
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
@@ -205,7 +213,7 @@ $(SOUNDBANK) : $(MODFILES)
 %.s %.h: %.bmp %.grit
 #---------------------------------------------------------------------------------
 	grit $< -fts -o$*
-
+# pS -> shared palette data
 #---------------------------------------------------------------------------------
 # Convert non-GRF game icon to GRF if needed
 #---------------------------------------------------------------------------------

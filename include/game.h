@@ -5,8 +5,12 @@
 #include "vector2i.c"
 //#include "audio.c"
 
-static const uint32_t GREY = 0xFF686868;
-static const uint32_t BLACK = 0xFF000000;
+static const uint16_t GREY = RGB15(13,13,13);
+static const uint16_t BLACK = RGB15(0,0,0);
+static const uint16_t MAGENTA = RGB15(31,0,31);
+
+static uint16_t gameColors[3] = {MAGENTA, BLACK, GREY};
+static uint16_t gameColorsInv[3] = {MAGENTA, GREY, BLACK};
 
 #define MAX_GUYS_ON_SCREEN 20
 #define ELEVATOR_SPOTS 5
@@ -109,7 +113,6 @@ typedef struct GameState {
 	struct Image doorBot;
 	struct Image guy;
 	struct Image numbersFont6px;
-	struct Image numbersFont6pxGrey;
 	/*
         Image ui;
         Image button;
