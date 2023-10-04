@@ -1,5 +1,5 @@
 # Symbol name
--s numbersFont6pxGrey
+-s rectangle
 
 # Set the warning/log level to 3
 -W3

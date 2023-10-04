@@ -3,7 +3,7 @@
 
 #include "game.h"
 #include "graphics.h"
-#include "vector2i.c"
+#include "vector2i.h"
 
 // BG
 #include <floor_b.c>
@@ -22,9 +22,18 @@ int main(void) {
 	videoSetMode(MODE_0_2D);
 	videoSetModeSub(MODE_0_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);
+	//vramSetBankA(VRAM_A_MAIN_SPRITE_0x06400000);
+	//vramSetBankB(VRAM_B_MAIN_SPRITE_0x06420000);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
 	vramSetBankD(VRAM_D_SUB_SPRITE);
-	
+/*
+ *
+ *vramSetBankA(VRAM_A_MAIN_SPRITE_0x06400000);
+vramSetBankB(VRAM_B_MAIN_SPRITE_0x06420000);
+vramSetBankC(VRAM_C_MAIN_BG_0x06000000);
+ *
+ *
+ */
 	consoleDemoInit();
 
 	dmaCopy(gameColors, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
@@ -45,10 +54,10 @@ int main(void) {
 	oamInit(&oamMain, SpriteMapping_1D_128, false); 
 
 	dmaCopy(gameColors, SPRITE_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColors)); // TODO move to game code
+	dmaCopy(gameColorsInv, SPRITE_PALETTE_SUB + 16, sizeof(uint16_t) * ARRAY_SIZE(gameColorsInv));
 	dmaCopy(gameColors, SPRITE_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
 	dmaCopy(gameColorsInv, SPRITE_PALETTE + 16, sizeof(uint16_t) * ARRAY_SIZE(gameColorsInv));
-//Backdrop Color
-	//float delta = 0.01666666666;
+
 	touchPosition touch;
 	bool lastFramePenDown = false;
 	while(1) {

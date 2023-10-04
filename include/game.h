@@ -2,7 +2,7 @@
 //#include "platform.h"
 #include "graphics.h"
 //#include "math.h"
-#include "vector2i.c"
+#include "vector2i.h"
 //#include "audio.c"
 
 static const uint16_t GREY = RGB15(13,13,13);
@@ -39,15 +39,17 @@ static const float FLASH_TIME = 3.0f;
 static const float CIRCLE_TIME = 3.2f;
 
 typedef struct Guy {
-    bool active;
+	bool active;
 
-    bool onElevator;
-    int elevatorSpot;
+	bool onElevator;
+	int elevatorSpot;
 
-    int desiredFloor;
-    int currentFloor;
+	int desiredFloor;
+	int currentFloor;
 
-    float mood; //From MOOD_TIME*3 to MOOD_TIME, 0 is game over
+	float mood; //From MOOD_TIME*3 to MOOD_TIME, 0 is game over
+	struct Sprite* floatingNumber;
+	struct Sprite* rectangle;
 } Guy;
 
 typedef enum Screen {
@@ -55,15 +57,15 @@ typedef enum Screen {
     GAME,
     SCORE,
 } Screen;
-
-typedef struct floatingNumber{
+/*
+struct FloatingNumber{
 	    bool active;
 	    int value;
 	    int floor;
 	    float offsetY;
-	    //Vector2i startingPosOffset;
-} floatingNumber;
-
+	    struct Vector2i startingPosOffset;
+};
+*/
 typedef struct Timer{
 	bool active;
 	float time;
@@ -101,7 +103,7 @@ typedef struct GameState {
     bool elevatorSpots[ELEVATOR_SPOTS];
     bool fullFloors[10];
 
-    floatingNumber floatingNumbers[5];
+    //struct FloatingNumber floatingNumbers[5];
     
     //readFile_t* readFileFunction;
     //writeScoreToFile_t* writeScoreFunction;
@@ -113,6 +115,7 @@ typedef struct GameState {
 	struct Image doorBot;
 	struct Image guy;
 	struct Image numbersFont6px;
+	struct Image rectangle;
 	/*
         Image ui;
         Image button;
@@ -129,20 +132,22 @@ typedef struct GameState {
         Image numbersFont4px;
 	Image uiLabels;
 	Image titleLabels;
-	Image rectangle;
 	*/
     } images;
- 	struct Sprite spritesMain[64]; 
+ 	struct Sprite spritesMain[128]; 
  	struct Sprite spritesSub[64]; 
 	int spriteCountMain;
 	int spriteCountSub;
+
 	struct Sprite* doorSpriteBot; // TODO merge into sprites struct?
 	struct Sprite* doorSpriteTop;
 	struct Sprite* buttonSprites[10];
+	struct Sprite* buttonNumberSprites[10];
 	struct Sprite* guySprites[MAX_GUYS_ON_SCREEN];
 	struct Sprite* dropOffGuySprite;
 	struct Sprite* floorIndicatorSprites[2];
 	struct Sprite* scoreSprites[6];
+	struct Sprite* levelSprite;
 /*
     struct audioFiles_t {
 	    AudioFile music;
