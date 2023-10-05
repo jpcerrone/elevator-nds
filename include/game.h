@@ -11,6 +11,7 @@ static const uint16_t MAGENTA = RGB15(31,0,31);
 
 static uint16_t gameColors[3] = {MAGENTA, BLACK, GREY};
 static uint16_t gameColorsInv[3] = {MAGENTA, GREY, BLACK};
+static uint16_t gameColorsNoTransp[2] = {BLACK, GREY};
 
 #define MAX_GUYS_ON_SCREEN 20
 #define ELEVATOR_SPOTS 5
@@ -116,18 +117,18 @@ typedef struct GameState {
 	struct Image guy;
 	struct Image numbersFont6px;
 	struct Image rectangle;
+        struct Image uiGuy;
+        struct Image arrow;
 	/*
         Image ui;
         Image button;
         Image uiBottom;
-        Image uiGuy;
         Image elevator;
         Image elevatorF;
         Image floorB;
         Image floor;
         Image vigasB;
         Image vigasF;
-        Image arrows;
         Image numbersFont3px;
         Image numbersFont4px;
 	Image uiLabels;
@@ -148,6 +149,8 @@ typedef struct GameState {
 	struct Sprite* floorIndicatorSprites[2];
 	struct Sprite* scoreSprites[6];
 	struct Sprite* levelSprite;
+	struct Sprite* uiGuySprites[10];
+	struct Sprite* arrowSprites[10];
 /*
     struct audioFiles_t {
 	    AudioFile music;

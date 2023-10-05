@@ -12,7 +12,7 @@ struct Image loadImage(uint8_t* dataPtr, int width, int height, int frames){
 struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* spriteCount, int x, int y, int frame, OamState* screen, bool visible, int priority){
 	// sassert(spriteCount < MAX_SPRITES, "Sprite count already at maximum value");	
 	sassert(image->width == image->height, "Image is not sqaure");
-	sassert(image->width == 64 ||  image->width == 32 || image->width == 16, "Image size not suported");
+	sassert(image->width == 64 ||  image->width == 32 || image->width == 16 || image->width == 8, "Image size not suported");
 
 	sprites[*spriteCount].x = x;
 	sprites[*spriteCount].y = y;
@@ -34,6 +34,9 @@ struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* s
 	else if(image->width == 16 && image->height == 16){
 		size = SpriteSize_16x16;
 	}
+	else if(image->width == 8 && image->height == 8){
+		size = SpriteSize_8x8;
+	}
 	sprites[*spriteCount].oamPtr = oamAllocateGfx(screen, size, SpriteColorFormat_16Color);
 	(*spriteCount)++;
 	return &sprites[*spriteCount-1];
@@ -42,13 +45,18 @@ struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* s
 void drawSprite(struct Sprite* sprite){
 	dmaCopy(sprite->image->pixelPointer + sprite->frame*sprite->image->width*sprite->image->height/2, sprite->oamPtr, sprite->image->width*sprite->image->height); // Here i divide by 2 cuz at 16colors (4bit) each byte of dataPtr contains 2 pixels
 	SpriteSize size; // TODO ADD TO SPRITE STRUCT
+	// TODO collapse in switch, only check 1 dimmension and assert that theyre equal beforehand
 	if (sprite->image->width == 64 && sprite->image->height == 64){
 		size = SpriteSize_64x64;
 	}
 	else if (sprite->image->width == 32 && sprite->image->height == 32){
 		size = SpriteSize_32x32;
-	}else{
+	}
+	else if(sprite->image->width == 16 && sprite->image->height == 16){
 		size = SpriteSize_16x16;
+	}
+	else{ 
+		size = SpriteSize_8x8;
 	}
 	oamSet(sprite->screen, sprite->index, sprite->x, sprite->y, sprite->priority , sprite->paletteIdx, size, SpriteColorFormat_16Color, sprite->oamPtr, -1, false, !sprite->visible, sprite->flipH, false, false); 
 }

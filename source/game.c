@@ -16,6 +16,8 @@
 #include <guy.h>
 #include <numbersFont6px.h>
 #include <rectangle.h>
+#include <ui-guy.h>
+#include <arrow.h>
 
 /*
 #include "platform.h"
@@ -137,6 +139,9 @@ void pickAndPlaceGuys(GameState* state) {
 							break;
 						}
 					}
+					state->uiGuySprites[state->currentFloor]->visible = false;
+					state->arrowSprites[state->currentFloor]->visible = false;
+
 				}
 			}
 
@@ -217,7 +222,6 @@ state->flashTextTimer.active = true;
 			state->flashTextTimer.time = FLASH_TIME;
 
 */
-    //memset(state->floatingNumbers, 0, sizeof(state->floatingNumbers));
 
    	memset(state->spritesSub, 0, sizeof(state->spritesSub)); // CHECK THIS
 	memset(state->spritesMain, 0, sizeof(state->spritesMain)); // CHECK THIS
@@ -231,7 +235,9 @@ state->flashTextTimer.active = true;
     	state->images.bigButton = loadImage((uint8_t*)buttonBigTiles, 32, 32, 2);
 	state->images.numbersFont6px = loadImage((uint8_t*)numbersFont6pxTiles, 16, 16, 10);
 	state->images.rectangle = loadImage((uint8_t*)rectangleTiles, 16, 16, 1);
-	
+	state->images.uiGuy = loadImage((uint8_t*)uiGuyTiles, 16, 16, 4);
+	state->images.arrow = loadImage((uint8_t*)arrowTiles, 8, 8, 2);
+
 	// Can't collapse these two loops since adding a 16x16 sprite after a 32x32 one screws things up
 	for(int y=0;y < 10; y++){
 		int x = SCREEN_WIDTH/2 - 16;
@@ -243,6 +249,18 @@ state->flashTextTimer.active = true;
 		x += (y%2 == 0) ? 14 : -14;
 		state->buttonNumberSprites[9 - y] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, x + 8, y * 16 + 16, 9 - y, &oamSub, true, 0);
 		state->buttonNumberSprites[9 - y]->paletteIdx = 1;
+		int uiGuyX = x; 
+		int arrowX = x; 
+		if ((y % 2) == 0){
+			uiGuyX += 32;
+			arrowX += 44;
+		}
+		else{
+			uiGuyX -= 16;
+			arrowX -= 20;
+		}
+		state->uiGuySprites[9 - y] = createSprite(&state->images.uiGuy, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, uiGuyX, y * 16 + 16, 0, &oamSub, false, 0);
+		state->arrowSprites[9 - y] = createSprite(&state->images.arrow, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, arrowX, y * 16 + 24, 0, &oamSub, false, 0);
 	}
 	state->images.guy = loadImage((uint8_t*)guyTiles, 64, 64, 4);
 	for(int i=0; i < MAX_GUYS_ON_SCREEN; i++){
@@ -277,7 +295,6 @@ state->flashTextTimer.active = true;
     state->images.vigasB = loadBMP("../spr/vigasB.bmp", state->readFileFunction);
     state->images.vigasF = loadBMP("../spr/vigasF.bmp", state->readFileFunction);
     state->images.elevatorF = loadBMP("../spr/elevator_f.bmp", state->readFileFunction);
-    state->images.arrows = loadBMP("../spr/arrow.bmp", state->readFileFunction, 2);
     state->images.numbersFont4px = loadBMP("../spr/4x6Numbers.bmp", state->readFileFunction, 10);
     state->images.uiLabels = loadBMP("../spr/uiLabels.bmp", state->readFileFunction, 4);
     state->images.titleLabels = loadBMP("../spr/titleLabels.bmp", state->readFileFunction, 2);
@@ -719,23 +736,18 @@ void updateAndRender(GameInput* input, GameState* state) {
 				state->guys[j].floatingNumber->y = waitingGuyPos.y;
 			}
 			// Draw UI guys
-			/*
-                        Vector2i offsetInBox = { -2, -1 };
-                        drawImage(renders, ARRAY_SIZE(renders), &state->images.uiGuy, state->images.uiGuy.height * 8.0f + offsetInBox.x,
-                            (float)state->images.uiGuy.height + state->images.uiGuy.height * state->guys[j].currentFloor + offsetInBox.y,
-                           1, mood);
-                        Vector2i arrowOffsetInBox = { 11, 0 };
+			state->uiGuySprites[state->guys[j].currentFloor]->visible = true;
+			state->uiGuySprites[state->guys[j].currentFloor]->frame = mood;
+			state->arrowSprites[state->guys[j].currentFloor]->visible = true;
                         int arrowFrame;
                         if (state->guys[j].currentFloor < state->guys[j].desiredFloor) {
-                            arrowFrame = 0;
-                        }
-                        else {
                             arrowFrame = 1;
                         }
-                        drawImage(renders, ARRAY_SIZE(renders), &state->images.arrows, state->images.uiGuy.height * 8.0f + arrowOffsetInBox.x,
-                            (float)state->images.uiGuy.height + state->images.uiGuy.height * state->guys[j].currentFloor,1, arrowFrame);
-			    */
-                    }
+                        else {
+                            arrowFrame = 0;
+                        }
+			state->arrowSprites[state->guys[j].currentFloor]->frame = arrowFrame;
+                }
                 }
             }
 
@@ -765,7 +777,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    //iprintf("[a%d: b:%d c:%d d:%d e:%d]\n ",  state->elevatorSpots[0], state->elevatorSpots[1],state->elevatorSpots[2],state->elevatorSpots[3],state->elevatorSpots[4]);
 
 	    // Debug stuff
-#if 1
+#if 0
             for (int i = 0; i < MAX_GUYS_ON_SCREEN; i++) {
                 if (state->guys[i].active) { 
 			iprintf("[g%d: c:%d d:%d e:%d]\n ", i, state->guys[i].currentFloor, state->guys[i].desiredFloor, state->guys[i].elevatorSpot + 1);

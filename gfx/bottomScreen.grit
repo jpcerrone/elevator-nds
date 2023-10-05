@@ -1,0 +1,17 @@
+# Symbol name
+-s bottomScreen
+
+# Set the warning/log level to 3
+-W3
+
+# Set the transparent color to 000000 (rrggbb hex)
+-gTFF00FF
+
+# Tile image
+-gt
+
+# Include map in output. Enables tile-mapping of the image.
+-m
+
+# Set the bit depth to 8
+-gB4

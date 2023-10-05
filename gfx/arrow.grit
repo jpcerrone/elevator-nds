@@ -1,0 +1,14 @@
+# Symbol name
+-s arrow
+
+# Set the warning/log level to 3
+-W3
+
+# Set the transparent color to magenta (rrggbb hex)
+-gTFF00FF
+
+# Bitmap image
+-gt
+
+# Set the bit depth to 8
+-gB4
