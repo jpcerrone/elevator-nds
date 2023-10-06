@@ -10,6 +10,15 @@
 #include "game.h"
 #include "graphics.h"
 
+// BG
+#include <floor_b.c>
+#include <floor_b.h>
+#include <topScreen.h>
+#include <bottomScreen.h>
+#include <menu.h>
+#include <score.h>
+
+// Sprites
 #include <button_big.h>
 #include <door.h>
 #include <doorBot.h>
@@ -18,6 +27,7 @@
 #include <rectangle.h>
 #include <ui-guy.h>
 #include <arrow.h>
+#include <pressAnyButton.h>
 
 /*
 #include "platform.h"
@@ -73,21 +83,6 @@ int getScore(float mood, bool pickingUp) {
     }
     return score;
 }
-/*
-void spawnFloatingNumber(struct FloatingNumber* floatingNumbers, int floatingNumbersSize, int value, int floor){
-	for(int i=0; i < floatingNumbersSize; i++){
-		if(!floatingNumbers[i].active){
-			floatingNumbers[i].active = true;
-			floatingNumbers[i].value = value;
-			floatingNumbers[i].floor = floor;
-			floatingNumbers[i].offsetY = 0;
-			floatingNumbers[i].startingPosOffset.x = rand()%15; 
-			floatingNumbers[i].startingPosOffset.y = rand()%20; 
-			break;
-		}
-	}
-}
-*/
 
 bool isElevatorFull(bool elevatorSpots[]){
 	for (int s = 0; s < ELEVATOR_SPOTS; s++) {
@@ -198,12 +193,123 @@ void spawnNewGuy(Guy *guys, bool *fullFloors, int currentFloor) {
     fullFloors[randomCurrent] = true;
 }
 
+void loadMenuGfx(GameState* state){
+
+    	dmaCopy(gameColorsNoTransp, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
+	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
+    	
+	dmaCopy(gameColors, SPRITE_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
+	dmaCopy(gameColorsInv, SPRITE_PALETTE_SUB + 16, sizeof(uint16_t) * ARRAY_SIZE(gameColorsInv));
+	dmaCopy(gameColors, SPRITE_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
+	dmaCopy(gameColorsInv, SPRITE_PALETTE + 16, sizeof(uint16_t) * ARRAY_SIZE(gameColorsInv));
+	dmaCopy(gameColorsNoTransp, SPRITE_PALETTE + 32, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
+
+    	// Background loading
+	int bg3 = bgInit(3, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(menuTiles, bgGetGfxPtr(bg3), menuTilesLen);
+	dmaCopy(menuMap, bgGetMapPtr(bg3),  menuMapLen);
+
+	int bg1Sub = bgInitSub(1, BgType_Text4bpp, BgSize_T_256x256, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(bottomScreenTiles, bgGetGfxPtr(bg1Sub), bottomScreenTilesLen);
+	dmaCopy(bottomScreenMap, bgGetMapPtr(bg1Sub),  bottomScreenMapLen);
+
+	bgSetPriority(bg1Sub, 1);
+	bgHide(2);
+	for(int i = 0; i < 10; i++){
+		state->buttonSprites[i]->visible = true;
+		state->buttonSprites[i]->frame = 0;
+		state->buttonNumberSprites[i]->visible = true;
+		state->buttonNumberSprites[i]->paletteIdx = 1;
+
+	}
+	for(int i= 0; i < 6; i++){
+
+		state->scoreSprites[i]->visible = false;
+		state->maxScoreSprites[i]->visible = false;
+	}
+	state->pressAnyButtonSprite[0]->visible = true;
+	state->pressAnyButtonSprite[1]->visible = true;
+}
+void loadGameGfx(GameState* state){
+ 
+    // BG loading
+    	dmaCopy(gameColors, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
+	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
+
+	int bg3 = bgInit(3, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(floor_bTiles, bgGetGfxPtr(bg3), floor_bTilesLen);
+	dmaCopy(floor_bMap, bgGetMapPtr(bg3),  floor_bMapLen);
+
+	int bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x256, 2 /*the 2k offset into vram the tile map will be placed*/,2 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(topScreenTiles, bgGetGfxPtr(bg2), topScreenTilesLen);
+	dmaCopy(topScreenMap, bgGetMapPtr(bg2),  topScreenMapLen);
+
+	bgSetPriority(bg3, 3);
+	bgSetPriority(bg2, 2);
+
+	state->doorSpriteBot->visible = true;
+	state->doorSpriteTop->visible = true;
+	state->levelSprite->visible = true;
+	for(int i = 0; i < 10; i++){
+		state->buttonSprites[i]->visible = true;
+		state->buttonNumberSprites[i]->visible = true;
+		state->guySprites[i]->visible = true;
+	}
+	for(int i= 0; i < 6; i++){
+
+		state->scoreSprites[i]->visible = true;
+	}
+	for(int i= 0; i < 2; i++){
+
+		state->floorIndicatorSprites[i]->visible = true;
+	}
+
+	state->pressAnyButtonSprite[0]->visible = false;
+	state->pressAnyButtonSprite[1]->visible = false;
+
+
+}
+void loadScoreGfx(GameState* state){
+
+    	dmaCopy(gameColorsNoTransp, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
+	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
+    	
+    	// Background loading
+	int bg3 = bgInit(3, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(scoreTiles, bgGetGfxPtr(bg3), scoreTilesLen);
+	dmaCopy(scoreMap, bgGetMapPtr(bg3),  scoreMapLen);
+
+	bgHide(2);
+	bgHide(5);
+
+	state->doorSpriteBot->visible = false;
+	state->doorSpriteTop->visible = false;
+	state->levelSprite->visible = false;
+	for(int i = 0; i < 10; i++){
+		state->buttonSprites[i]->visible = false;
+		state->buttonNumberSprites[i]->visible = false;
+		state->uiGuySprites[i]->visible = false;
+		state->arrowSprites[i]->visible = false;
+		state->guySprites[i]->visible = false;
+		state->guys[i].floatingNumber->visible = false;
+		state->guys[i].rectangle->visible = false;
+
+	}
+	state->dropOffGuySprite->visible = false;
+	for(int i= 0; i < 2; i++){
+
+		state->floorIndicatorSprites[i]->visible = false;
+	}
+
+	displayNumber(state->score, state->scoreSprites, ARRAY_SIZE(state->scoreSprites),  &state->images.numbersFont6px, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 16, 0, 1, true, 7.0);
+	displayNumber(state->maxScore, state->maxScoreSprites, ARRAY_SIZE(state->scoreSprites),  &state->images.numbersFont6px, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 32, 0, 1, true, 7.0);
+}
 void initGameState(GameState *state) {
 
     srand((uint32_t)time(NULL)); // Set random seed
 
     state->isInitialized = true;
-    state->currentScreen = GAME;
+    state->currentScreen = MENU;
 /*
     state->transitionToBlackTimer = {};
     state->transitionFromBlackTimer = {};
@@ -217,27 +323,39 @@ void initGameState(GameState *state) {
     }
     else {
         state->maxScore = 0;
+
     }
-state->flashTextTimer.active = true;
-			state->flashTextTimer.time = FLASH_TIME;
+    */
+	state->maxScore = 0;
 
-*/
+	state->flashTextTimer.active = true;
+	state->flashTextTimer.time = FLASH_TIME;
 
+	loadMenuGfx(state);
+
+
+	// Sprite loading
    	memset(state->spritesSub, 0, sizeof(state->spritesSub)); // CHECK THIS
 	memset(state->spritesMain, 0, sizeof(state->spritesMain)); // CHECK THIS
 
 	struct Vector2i doorPos = {{SCREEN_CENTER.x - 67}, {SCREEN_CENTER.y - 52}};
     	state->images.door = loadImage((uint8_t*)doorTiles, 64, 64, 2);
-	state->doorSpriteTop = createSprite(&state->images.door, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y, 0, &oamMain, true, 0);
+	state->doorSpriteTop = createSprite(&state->images.door, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y, 0, &oamMain, false, 0);
 	state->images.doorBot = loadImage((uint8_t*)doorBotTiles, 64, 64, 2);
-	state->doorSpriteBot = createSprite(&state->images.doorBot, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y +37, 0, &oamMain, true, 0);
+	state->doorSpriteBot = createSprite(&state->images.doorBot, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y +37, 0, &oamMain, false, 0);
 
+	state->images.pressAnyButton = loadImage((uint8_t*)pressAnyButtonTiles, 64, 32, 2);
     	state->images.bigButton = loadImage((uint8_t*)buttonBigTiles, 32, 32, 2);
 	state->images.numbersFont6px = loadImage((uint8_t*)numbersFont6pxTiles, 16, 16, 10);
 	state->images.rectangle = loadImage((uint8_t*)rectangleTiles, 16, 16, 1);
 	state->images.uiGuy = loadImage((uint8_t*)uiGuyTiles, 16, 16, 4);
 	state->images.arrow = loadImage((uint8_t*)arrowTiles, 8, 8, 2);
 
+	struct Vector2i pressAnyButtonPos = {{SCREEN_WIDTH/2 - 64}, {SCREEN_HEIGHT/2 + 48}};
+	state->pressAnyButtonSprite[0] = createSprite(&state->images.pressAnyButton, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, pressAnyButtonPos.x, pressAnyButtonPos.y , 0, &oamMain, true, 0);
+	state->pressAnyButtonSprite[1] = createSprite(&state->images.pressAnyButton, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, pressAnyButtonPos.x + 64, pressAnyButtonPos.y, 1, &oamMain, true, 0);
+	state->pressAnyButtonSprite[0]->paletteIdx = 1;
+	state->pressAnyButtonSprite[1]->paletteIdx = 1;
 	// Can't collapse these two loops since adding a 16x16 sprite after a 32x32 one screws things up
 	for(int y=0;y < 10; y++){
 		int x = SCREEN_WIDTH/2 - 16;
@@ -270,18 +388,20 @@ state->flashTextTimer.active = true;
 	state->dropOffGuySprite = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2 - 32, 0, &oamMain, false, 0);
 	flipSprite(state->dropOffGuySprite);
 	for(int i =0; i < ARRAY_SIZE(state->floorIndicatorSprites); i++){
-		state->floorIndicatorSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, true, 0);
+		state->floorIndicatorSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 0);
 	}
 	for(int i =0; i < ARRAY_SIZE(state->scoreSprites); i++){
-		state->scoreSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, true, 0);
+		state->scoreSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 0);
+		state->maxScoreSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 0);
 		state->scoreSprites[i]->paletteIdx = 1;
+		state->maxScoreSprites[i]->paletteIdx = 1;
 	}
 	for(int i=0; i < MAX_GUYS_ON_SCREEN; i++){
 		state->guys[i].rectangle = createSprite(&state->images.rectangle, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 1);
 		state->guys[i].floatingNumber = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2, 0, &oamMain, false, 0);
 		state->guys[i].rectangle->paletteIdx = 1;
 	}	
-	state->levelSprite = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0,0 , 0, &oamMain, true, 0);
+	state->levelSprite = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0,0 , 0, &oamMain, false, 0);
 	state->levelSprite->paletteIdx = 1;
 
     /*
@@ -409,11 +529,14 @@ void resetGame(GameState *state) {
 */
     memset(state->elevatorSpots, 0, sizeof(state->elevatorSpots));
     memset(state->fullFloors, 0, sizeof(state->fullFloors));
-    //memset(state->guys, 0 , sizeof(state->guys));
-    
+    for(int i=0; i < 10; i++){
+	state->guys[i].active = false;
+    }
+    loadGameGfx(state);
     //memset(state->floatingNumbers, 0, sizeof(state->floatingNumbers));
     
 }
+
 /*
 void playSound(AudioClip *clips, AudioFile *file, float volume = 1.0f){
 	Assert(volume >= 0 && volume <= 1.0);
@@ -443,48 +566,50 @@ void playMusic(AudioClip *clips, AudioFile *file, float volume = 1.0f){
 void updateAndRender(GameInput* input, GameState* state) {
 	if (!state->isInitialized) {
 		initGameState(state);
-		resetGame(state); // REMOVE THIS AFTER ENABLING MENU
        }
     	//renderAudio(audioBuffer, audioFramesAvailable, state->clips);
         switch (state->currentScreen) {
-        case MENU:{ /*
-	    fillBGWithColor(bitMapMemory, screenWidth, screenHeight, BLACK);
-            drawImage(renders, ARRAY_SIZE(renders), &state->images.titleLabels, screenWidth/2.0f, screenHeight/2.0f,0, 0, false ,3, true);
+        case MENU:{
 	    int flashPerSecond = 2; // IMPROVEMNT this doesnt really work for other numbers
 	    if (state->flashTextTimer.active){
 		state->flashTextTimer.time -= flashPerSecond*DELTA;
-	    } else if(state->flashTextTimer.time <= 0){
-		    state->flashTextTimer = {};
 	    }
-	    bool drawFlash = roundFloat(state->flashTextTimer.time*flashPerSecond) % 2;
-	    if (drawFlash){
-			drawImage(renders, ARRAY_SIZE(renders), &state->images.titleLabels, screenWidth/2.0f,screenHeight/2.0f - 40,0, 1, false, 1, true);
+	    if(state->flashTextTimer.time <= 0){
+		    state->flashTextTimer.time = FLASH_TIME;
 	    }
+	    bool drawFlash = ((int)roundf(state->flashTextTimer.time*flashPerSecond)) % 2;
+	    state->pressAnyButtonSprite[0]->visible = drawFlash;
+	    state->pressAnyButtonSprite[1]->visible = drawFlash;
+	    /*
 	    if (state->transitionToBlackTimer.active) {
 		if (state->transitionToBlackTimer.time <= 0){
 			state->transitionToBlackTimer.active = false;
         		state->transitionFromBlackTimer.time= TRANSITION_TIME;
 			state->transitionFromBlackTimer.active = true;
                     	state->currentScreen = GAME;
-		    	playMusic(state->clips, &state->audioFiles.music, 0.5);
+		    	//playMusic(state->clips, &state->audioFiles.music, 0.5);
 			return;
 		}
                 state->transitionToBlackTimer.time -= DELTA;
 		break; // The actual transition is handled after the switch statement
             }
-            for (int i = 0; i < 10; i++) {
-                if (input.buttons[i]) {
-                    resetGame(state);
+	    */
+	    for (int i = 0; i < 10; i++) {
+		    if (input->buttons[i]) {
+			    resetGame(state);
+			    state->currentScreen = GAME;
+		    /*
 		    state->transitionToBlackTimer.time= TRANSITION_TIME;
 		    state->transitionToBlackTimer.active = true;
-		    playSound(state->clips, &state->audioFiles.click, 0.5);
+		    */
+		    //playSound(state->clips, &state->audioFiles.click, 0.5);
                     break;
                 }
-            } */
+            }
         }break;        
         case GAME:{ 
 
-			  /*
+			  
 
 		if (state->transitionFromBlackTimer.active) {
 			state->transitionFromBlackTimer.time -= DELTA;
@@ -493,7 +618,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 			}
 		}
 		
-	
+/*	
             // Timers
 	    // Circle Focus
 	    	int radius = 13;
@@ -556,7 +681,10 @@ void updateAndRender(GameInput* input, GameState* state) {
                         if (state->guys[i].mood <= 0.0) {
 				/* added in nds for testing, TODO remove
 				 */
-				resetGame(state);
+				loadScoreGfx(state);
+				state->currentScreen = SCORE;
+				state->scoreTimer.active = true;
+				state->scoreTimer.time = SCORE_TIME;
 				return;
 				 /* 
 				 */
@@ -658,10 +786,6 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    }
 	    
             // Draw elevator stuff
-	    
-            struct Vector2i floorIndicatorOffset = { {15}, {40} };
-
-	    
             int floorYOffset = state->elevatorPosY % (FLOOR_SEPARATION); 
             if (floorYOffset > FLOOR_SEPARATION/2) {
                 floorYOffset = (FLOOR_SEPARATION - floorYOffset) * -1; // Hack to handle negative mod operation.
@@ -792,35 +916,45 @@ void updateAndRender(GameInput* input, GameState* state) {
 #endif
 	    
         }break;        
-        case SCORE:{
-           /* 
-	    if (state->score > state->maxScore) {
-                state->maxScore = state->score;
-            }
+	case SCORE:{
+			   if (state->score > state->maxScore) {
+				   state->maxScore = state->score;
+			   }
+			   if (state->scoreTimer.active) {
+				   state->scoreTimer.time -= DELTA;
+				   /*
+				   drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, screenWidth/2.0f, screenHeight/2.0f + 20,0, 2, 0, 1, true);
+				   drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, screenWidth/2.0f, screenHeight/2.0f - 20,0, 3, 0, 1 , true);
+				   drawNumber(state->score,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, screenWidth / 2.0f, screenHeight / 2.0f + 10,0, 1, GREY, true);
+				   drawNumber(state->maxScore,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, screenWidth / 2.0f, screenHeight / 2.0f - 30,0, 1, GREY, true);
+				   state->writeScoreFunction((char *)& SCORE_PATH, state->maxScore);
+				   */
+				   if(state->scoreTimer.time < 0){
+					   state->scoreTimer.active = false;
+					   state->scoreTimer.time = 0;
+				   }
+			   }
+			   else{
+				   state->flashTextTimer.active = true;
+				   state->flashTextTimer.active = FLASH_TIME;
+				   loadMenuGfx(state);
+				   state->currentScreen = MENU;
 
-		if (state->scoreTimer.active) {
-		    state->scoreTimer.time -= DELTA;
-		    drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, screenWidth/2.0f, screenHeight/2.0f + 20,0, 2, 0, 1, true);
-		    drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, screenWidth/2.0f, screenHeight/2.0f - 20,0, 3, 0, 1 , true);
-		    drawNumber(state->score,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, screenWidth / 2.0f, screenHeight / 2.0f + 10,0, 1, GREY, true);
-		    drawNumber(state->maxScore,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, screenWidth / 2.0f, screenHeight / 2.0f - 30,0, 1, GREY, true);
-		    state->writeScoreFunction((char *)& SCORE_PATH, state->maxScore);
-		    if(state->scoreTimer.time < 0){
-			state->scoreTimer = {};
-		    }
-		}
-		else if (state->transitionToBlackTimer.active) {
-		    state->transitionToBlackTimer.time -= DELTA;
-			if(state->transitionToBlackTimer.time < 0){
-				state->transitionToBlackTimer = {};
-			}}
-		else {
-		    state->transitionToBlackTimer.active = false;
-		    state->flashTextTimer = {true, FLASH_TIME};
-		    state->currentScreen = MENU;
-		} */
-        }break;
-    }
+			   }
+			   /*
+			   else if (state->transitionToBlackTimer.active) {
+				   state->transitionToBlackTimer.time -= DELTA;
+				   if(state->transitionToBlackTimer.time < 0){
+					   state->transitionToBlackTimer = {};
+				   }}
+			   else {
+				   state->transitionToBlackTimer.active = false;
+				   state->flashTextTimer = {true, FLASH_TIME};
+				   state->currentScreen = MENU;
+			   } 
+			   */
+		   }break;
+	}
 	/*
 	// Transitions         
            if (state->transitionToBlackTimer.active) {

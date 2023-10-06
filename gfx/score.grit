@@ -1,0 +1,17 @@
+# Symbol name
+-s score
+
+# Set the warning/log level to 3
+-W3
+
+# Set the transparent color to magenta (rrggbb hex)
+-gTFF00FF
+
+# Bitmap image
+-gt
+
+# Include map in output. Enables tile-mapping of the image.
+-m
+
+# Set the bit depth to 8
+-gB4

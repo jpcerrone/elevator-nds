@@ -13,7 +13,7 @@ static uint16_t gameColors[3] = {MAGENTA, BLACK, GREY};
 static uint16_t gameColorsInv[3] = {MAGENTA, GREY, BLACK};
 static uint16_t gameColorsNoTransp[2] = {BLACK, GREY};
 
-#define MAX_GUYS_ON_SCREEN 20
+#define MAX_GUYS_ON_SCREEN 10
 #define ELEVATOR_SPOTS 5
 static const float STARTING_SPEED = 150;
 static const int FLOOR_SEPARATION = 320;
@@ -58,15 +58,7 @@ typedef enum Screen {
     GAME,
     SCORE,
 } Screen;
-/*
-struct FloatingNumber{
-	    bool active;
-	    int value;
-	    int floor;
-	    float offsetY;
-	    struct Vector2i startingPosOffset;
-};
-*/
+
 typedef struct Timer{
 	bool active;
 	float time;
@@ -104,13 +96,13 @@ typedef struct GameState {
     bool elevatorSpots[ELEVATOR_SPOTS];
     bool fullFloors[10];
 
-    //struct FloatingNumber floatingNumbers[5];
     
     //readFile_t* readFileFunction;
     //writeScoreToFile_t* writeScoreFunction;
   //freeFileMemory_t* freeFileMemory;
 
     struct {
+        struct Image pressAnyButton;
 	struct Image bigButton;
 	struct Image door;
 	struct Image doorBot;
@@ -140,6 +132,7 @@ typedef struct GameState {
 	int spriteCountMain;
 	int spriteCountSub;
 
+	struct Sprite* pressAnyButtonSprite[2];
 	struct Sprite* doorSpriteBot; // TODO merge into sprites struct?
 	struct Sprite* doorSpriteTop;
 	struct Sprite* buttonSprites[10];
@@ -147,7 +140,8 @@ typedef struct GameState {
 	struct Sprite* guySprites[MAX_GUYS_ON_SCREEN];
 	struct Sprite* dropOffGuySprite;
 	struct Sprite* floorIndicatorSprites[2];
-	struct Sprite* scoreSprites[6];
+	struct Sprite* scoreSprites[6]; // Used during game and for score screen.
+	struct Sprite* maxScoreSprites[6]; 
 	struct Sprite* levelSprite;
 	struct Sprite* uiGuySprites[10];
 	struct Sprite* arrowSprites[10];

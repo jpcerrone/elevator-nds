@@ -5,12 +5,6 @@
 #include "graphics.h"
 #include "vector2i.h"
 
-// BG
-#include <floor_b.c>
-#include <floor_b.h>
-#include <topScreen.h>
-#include <bottomScreen.h>
-
 // Sprites
 #include <button_big.h>
 
@@ -38,34 +32,9 @@ vramSetBankC(VRAM_C_MAIN_BG_0x06000000);
  */
 	consoleDemoInit();
 
-	dmaCopy(gameColors, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
-	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
-
-	int bg3 = bgInit(3, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(floor_bTiles, bgGetGfxPtr(bg3), floor_bTilesLen);
-	dmaCopy(floor_bMap, bgGetMapPtr(bg3),  floor_bMapLen);
-
-	int bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x256, 2 /*the 2k offset into vram the tile map will be placed*/,2 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(topScreenTiles, bgGetGfxPtr(bg2), topScreenTilesLen);
-	dmaCopy(topScreenMap, bgGetMapPtr(bg2),  topScreenMapLen);
-
-	bgSetPriority(bg3, 3);
-	bgSetPriority(bg2, 2);
-
-	int bg1Sub = bgInitSub(1, BgType_Text4bpp, BgSize_T_256x256, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(bottomScreenTiles, bgGetGfxPtr(bg1Sub), bottomScreenTilesLen);
-	dmaCopy(bottomScreenMap, bgGetMapPtr(bg1Sub),  bottomScreenMapLen);
-
-	bgSetPriority(bg1Sub, 1);
-	// Sprites
+		// Sprites
 	oamInit(&oamSub, SpriteMapping_1D_128, false); // Why 128? -> https://www.tumblr.com/altik-0/24833858095/nds-development-some-info-on-sprites?redirect_to=%2Faltik-0%2F24833858095%2Fnds-development-some-info-on-sprites&source=blog_view_login_wall
 	oamInit(&oamMain, SpriteMapping_1D_128, false); 
-
-	dmaCopy(gameColors, SPRITE_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColors)); // TODO move to game code
-	dmaCopy(gameColorsInv, SPRITE_PALETTE_SUB + 16, sizeof(uint16_t) * ARRAY_SIZE(gameColorsInv));
-	dmaCopy(gameColors, SPRITE_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
-	dmaCopy(gameColorsInv, SPRITE_PALETTE + 16, sizeof(uint16_t) * ARRAY_SIZE(gameColorsInv));
-
 	touchPosition touch;
 	bool lastFramePenDown = false;
 	while(1) {
