@@ -5,6 +5,8 @@
 #include "vector2i.h"
 //#include "audio.c"
 
+#include <fat.h>
+
 static const uint16_t GREY = RGB15(13,13,13);
 static const uint16_t BLACK = RGB15(0,0,0);
 static const uint16_t MAGENTA = RGB15(31,0,31);
@@ -157,7 +159,6 @@ typedef struct GameState {
 	    AudioFile passing;
     };
     audioFiles_t audioFiles;
-
 
     AudioClip clips[11];
  */   

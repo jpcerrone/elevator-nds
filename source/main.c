@@ -58,7 +58,7 @@ vramSetBankC(VRAM_C_MAIN_BG_0x06000000);
 
 		// Rendering
 		swiWaitForVBlank(); // TODO Check the orer of evth that follows
-		consoleClear();
+		//consoleClear();
 		updateAndRender(&input, &state);
 		
 		for(int i=0; i < state.spriteCountMain; i++){

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <fat.h>
 
 #include "vector2i.h"
 #include "game.h"
@@ -305,11 +306,25 @@ void loadScoreGfx(GameState* state){
 	displayNumber(state->maxScore, state->maxScoreSprites, ARRAY_SIZE(state->scoreSprites),  &state->images.numbersFont6px, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 32, 0, 1, true, 7.0);
 }
 void initGameState(GameState *state) {
+	fatInitDefault();
+	FILE* saveFile = fopen("score.bin", "rb+");
+	if(saveFile != NULL){
+		if (fread(&state->maxScore, 4, 1, saveFile) == 0)
+		{
+			state->maxScore = 0;
+			iprintf("NotRead\n");
+		};
+	}
+	else{ // If can't open, try to create it
+		saveFile = fopen("score.bin", "wb+");
+		state->maxScore = 0;
+		fwrite(&state->maxScore, 4, 1, saveFile);
+	}
+	fclose(saveFile);
 
-    srand((uint32_t)time(NULL)); // Set random seed
-
-    state->isInitialized = true;
-    state->currentScreen = MENU;
+	srand((uint32_t)time(NULL)); // Set random seed
+	state->isInitialized = true;
+	state->currentScreen = MENU;
 /*
     state->transitionToBlackTimer = {};
     state->transitionFromBlackTimer = {};
@@ -326,7 +341,6 @@ void initGameState(GameState *state) {
 
     }
     */
-	state->maxScore = 0;
 
 	state->flashTextTimer.active = true;
 	state->flashTextTimer.time = FLASH_TIME;
@@ -679,9 +693,14 @@ void updateAndRender(GameInput* input, GameState* state) {
                     if (state->guys[i].active) {
                         state->guys[i].mood -= DELTA;
                         if (state->guys[i].mood <= 0.0) {
-				/* added in nds for testing, TODO remove
-				 */
+				if (state->score > state->maxScore) {
+					state->maxScore = state->score;
+					FILE* saveFile = fopen("score.bin", "wb");
+					fwrite(&state->maxScore, 4, 1, saveFile);
+					fclose(saveFile);
+				}
 				loadScoreGfx(state);
+
 				state->currentScreen = SCORE;
 				state->scoreTimer.active = true;
 				state->scoreTimer.time = SCORE_TIME;
@@ -917,9 +936,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    
         }break;        
 	case SCORE:{
-			   if (state->score > state->maxScore) {
-				   state->maxScore = state->score;
-			   }
+			   
 			   if (state->scoreTimer.active) {
 				   state->scoreTimer.time -= DELTA;
 				   /*
