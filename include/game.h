@@ -7,6 +7,11 @@
 
 #include <fat.h>
 
+#include <maxmod9.h>
+#include "soundbank.h"
+#include "soundbank_bin.h"
+
+
 static const uint16_t GREY = RGB15(13,13,13);
 static const uint16_t BLACK = RGB15(0,0,0);
 static const uint16_t MAGENTA = RGB15(31,0,31);
@@ -67,70 +72,65 @@ typedef struct Timer{
 } Timer;
 
 typedef struct GameState {
-    bool isInitialized;
-    Screen currentScreen;
-    int score;
-    int maxScore;
-    bool floorStates[11]; // 0 is the index for floor 0, 10 is the index for floor 9, there's a starting floor 10.
-    int elevatorPosY;
-    int currentFloor;
-    int currentDestination;
-    float elevatorSpeed;
-    int direction;
-    bool moving;
-    int currentLevel;
+	bool isInitialized;
+	Screen currentScreen;
+	int score;
+	int maxScore;
+	bool floorStates[11]; // 0 is the index for floor 0, 10 is the index for floor 9, there's a starting floor 10.
+	int elevatorPosY;
+	int currentFloor;
+	int currentDestination;
+	float elevatorSpeed;
+	int direction;
+	bool moving;
+	int currentLevel;
 
-    Timer spawnTimer;
-    Timer doorTimer;
-    Timer dropOffTimer;
-    Timer transitionToBlackTimer;
-    Timer transitionFromBlackTimer;
-    Timer scoreTimer;
-    Timer flashTextTimer;
-    Timer circleFocusTimer;
+	Timer spawnTimer;
+	Timer doorTimer;
+	Timer dropOffTimer;
+	Timer transitionToBlackTimer;
+	Timer transitionFromBlackTimer;
+	Timer scoreTimer;
+	Timer flashTextTimer;
+	Timer circleFocusTimer;
 
-    //Vector2i circleSpot;
-    bool failSoundPlaying;
+	//Vector2i circleSpot;
+	bool failSoundPlaying;
 
-    int dropOffFloor;
+	int dropOffFloor;
 
-    Guy guys[MAX_GUYS_ON_SCREEN];
-    bool elevatorSpots[ELEVATOR_SPOTS];
-    bool fullFloors[10];
+	Guy guys[MAX_GUYS_ON_SCREEN];
+	bool elevatorSpots[ELEVATOR_SPOTS];
+	bool fullFloors[10];
 
-    
-    //readFile_t* readFileFunction;
-    //writeScoreToFile_t* writeScoreFunction;
-  //freeFileMemory_t* freeFileMemory;
-
-    struct {
-        struct Image pressAnyButton;
-	struct Image bigButton;
-	struct Image door;
-	struct Image doorBot;
-	struct Image guy;
-	struct Image numbersFont6px;
-	struct Image rectangle;
-        struct Image uiGuy;
-        struct Image arrow;
-	/*
-        Image ui;
-        Image button;
-        Image uiBottom;
-        Image elevator;
-        Image elevatorF;
-        Image floorB;
-        Image floor;
-        Image vigasB;
-        Image vigasF;
-        Image numbersFont3px;
-        Image numbersFont4px;
-	Image uiLabels;
-	Image titleLabels;
-	*/
-    } images;
- 	struct Sprite spritesMain[128]; 
- 	struct Sprite spritesSub[64]; 
+	struct {
+		struct Image pressAnyButton;
+		struct Image bigButton;
+		struct Image door;
+		struct Image doorBot;
+		struct Image guy;
+		struct Image numbersFont6px;
+		struct Image rectangle;
+		struct Image uiGuy;
+		struct Image arrow;
+		/*
+		   Image ui;
+		   Image button;
+		   Image uiBottom;
+		   Image elevator;
+		   Image elevatorF;
+		   Image floorB;
+		   Image floor;
+		   Image vigasB;
+		   Image vigasF;
+		   Image numbersFont3px;
+		   Image numbersFont4px;
+		   Image uiLabels;
+		   Image titleLabels;
+		   */
+	} images;
+	struct Sprite spritesMain[128]; 
+	struct Sprite spritesSub[64]; 
 	int spriteCountMain;
 	int spriteCountSub;
 
@@ -147,21 +147,27 @@ typedef struct GameState {
 	struct Sprite* levelSprite;
 	struct Sprite* uiGuySprites[10];
 	struct Sprite* arrowSprites[10];
-/*
-    struct audioFiles_t {
-	    AudioFile music;
-	    AudioFile click;
-	    AudioFile arrival;
-	    AudioFile brake;
-	    AudioFile doorClose;
-	    AudioFile doorOpen;
-	    AudioFile fail;
-	    AudioFile passing;
-    };
-    audioFiles_t audioFiles;
 
-    AudioClip clips[11];
- */   
+	struct {
+		mm_sound_effect click;
+		mm_sound_effect arrival;
+		mm_sound_effect brake;
+		mm_sound_effect doorClose;
+		mm_sound_effect doorOpen;
+		mm_sound_effect fail;
+		mm_sound_effect passing;
+		mm_sound_effect music;
+
+	} audioFiles;
+	/*
+	 *
+	 struct audioFiles_t {
+	 AudioFile music;
+	 	 };
+	 audioFiles_t audioFiles;
+
+	 AudioClip clips[11];
+	 */   
 } GameState;
 
 

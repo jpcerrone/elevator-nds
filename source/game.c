@@ -30,10 +30,13 @@
 #include <arrow.h>
 #include <pressAnyButton.h>
 
+#include <maxmod9.h>
+#include "soundbank.h"
+#include "soundbank_bin.h"
+
 /*
 #include "platform.h"
 #include "intrinsics.h"
-#include "audio.c"
 */
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof(array[0]))
 static const float DELTA = 0.01666666666;
@@ -305,6 +308,15 @@ void loadScoreGfx(GameState* state){
 	displayNumber(state->score, state->scoreSprites, ARRAY_SIZE(state->scoreSprites),  &state->images.numbersFont6px, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 16, 0, 1, true, 7.0);
 	displayNumber(state->maxScore, state->maxScoreSprites, ARRAY_SIZE(state->scoreSprites),  &state->images.numbersFont6px, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 32, 0, 1, true, 7.0);
 }
+
+void initAudioEffect(mm_sound_effect* audioEffect, int id, int volume){
+	audioEffect->id = id;
+	audioEffect->rate = 1024; // 1024 -> Take input file rate
+	audioEffect->handle = 0; // 0 -> Allocate new handle
+	audioEffect->volume = volume;
+	audioEffect->panning = 127;
+}
+
 void initGameState(GameState *state) {
 	fatInitDefault();
 	FILE* saveFile = fopen("score.bin", "rb+");
@@ -312,7 +324,6 @@ void initGameState(GameState *state) {
 		if (fread(&state->maxScore, 4, 1, saveFile) == 0)
 		{
 			state->maxScore = 0;
-			iprintf("NotRead\n");
 		};
 	}
 	else{ // If can't open, try to create it
@@ -321,7 +332,16 @@ void initGameState(GameState *state) {
 		fwrite(&state->maxScore, 4, 1, saveFile);
 	}
 	fclose(saveFile);
-
+	
+	initAudioEffect(&state->audioFiles.click, SFX_CLICK, 127);
+	initAudioEffect(&state->audioFiles.arrival, SFX_ARRIVAL, 127);
+	initAudioEffect(&state->audioFiles.brake, SFX_BRAKE, 127);
+	initAudioEffect(&state->audioFiles.doorClose, SFX_DOOR_CLOSE, 127);
+	initAudioEffect(&state->audioFiles.doorOpen, SFX_DOOR_OPEN, 127);
+	initAudioEffect(&state->audioFiles.fail, SFX_FAIL, 127);
+	initAudioEffect(&state->audioFiles.passing, SFX_PASSING, 127);
+	initAudioEffect(&state->audioFiles.music, SFX_MUSIC, 127);
+	
 	srand((uint32_t)time(NULL)); // Set random seed
 	state->isInitialized = true;
 	state->currentScreen = MENU;
@@ -433,17 +453,6 @@ void initGameState(GameState *state) {
     state->images.uiLabels = loadBMP("../spr/uiLabels.bmp", state->readFileFunction, 4);
     state->images.titleLabels = loadBMP("../spr/titleLabels.bmp", state->readFileFunction, 2);
     state->images.rectangle = loadBMP("../spr/rectangle.bmp", state->readFileFunction);
-
-    state->audioFiles.click = loadWavFile("../sfx/click.wav", state->readFileFunction);
-    state->audioFiles.music = loadWavFile("../sfx/elevator.wav", state->readFileFunction);
-    state->audioFiles.arrival = loadWavFile("../sfx/arrival.wav", state->readFileFunction);
-    state->audioFiles.brake = loadWavFile("../sfx/brake.wav", state->readFileFunction);
-    state->audioFiles.doorClose = loadWavFile("../sfx/door_close.wav", state->readFileFunction);
-    state->audioFiles.doorOpen = loadWavFile("../sfx/door_open.wav", state->readFileFunction);
-    state->audioFiles.fail = loadWavFile("../sfx/fail.wav", state->readFileFunction);
-    state->audioFiles.passing = loadWavFile("../sfx/passing.wav", state->readFileFunction);
-// IMPROVMENT: I should close these files maybe, load them into my own structures and then close and free the previous memory, also invert rows.
-
     memset(state->clips, 0, sizeof(state->clips)); 
 */
     }
@@ -551,32 +560,6 @@ void resetGame(GameState *state) {
     
 }
 
-/*
-void playSound(AudioClip *clips, AudioFile *file, float volume = 1.0f){
-	Assert(volume >= 0 && volume <= 1.0);
-	for(int i=1; i < 11; i++){ // Index 0 reserved for BG music.
-		if (!clips[i].active){
-			clips[i].active = true;
-			clips[i].file = file;
-			clips[i].progress = 0;
-			clips[i].volume = volume;
-			clips[i].loop = false;
-			break;
-
-		}
-	}
-}
-
-// Same as playSound but always starts the bg music, regardless of how many audio clips are playing.
-void playMusic(AudioClip *clips, AudioFile *file, float volume = 1.0f){
-	Assert(volume >= 0 && volume <= 1.0);
-	clips[0].active = true;
-	clips[0].file = file;
-	clips[0].progress = 0;
-	clips[0].volume = volume;
-	clips[0].loop = true;
-}
-*/
 void updateAndRender(GameInput* input, GameState* state) {
 	if (!state->isInitialized) {
 		initGameState(state);
@@ -611,15 +594,15 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    for (int i = 0; i < 10; i++) {
 		    if (input->buttons[i]) {
 			    resetGame(state);
+			    mmEffectEx(&state->audioFiles.click);
 			    state->currentScreen = GAME;
-		    /*
-		    state->transitionToBlackTimer.time= TRANSITION_TIME;
-		    state->transitionToBlackTimer.active = true;
-		    */
-		    //playSound(state->clips, &state->audioFiles.click, 0.5);
-                    break;
-                }
-            }
+			    /*
+			       state->transitionToBlackTimer.time= TRANSITION_TIME;
+			       state->transitionToBlackTimer.active = true;
+			       */
+			    break;
+		    }
+	    }
         }break;        
         case GAME:{ 
 
@@ -651,6 +634,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 				state->circleFocusTimer.time -= DELTA;
 				if (state->circleFocusTimer.time < 1.8 && !state->failSoundPlaying){
 					playSound(state->clips, &state->audioFiles.fail, 0.5);
+					mmEffectEx(&state->audioFiles.fail);
 					state->failSoundPlaying = true;
 				}
 				return;
@@ -683,7 +667,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 			pickAndPlaceGuys(state);
 			state->doorTimer.active = 0;
 			state->doorTimer.time = 0;
-			//playSound(state->clips, &state->audioFiles.doorClose, 0.5);
+			    mmEffectEx(&state->audioFiles.doorClose);
 		    }
             }
             
@@ -708,7 +692,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 				 /* 
 				 */
 				//stopAllAudio(state->clips);
-				//playSound(state->clips, &state->audioFiles.brake, 0.5);
+			    mmEffectEx(&state->audioFiles.brake);
 				//state->circleFocusTimer= {true, CIRCLE_TIME};
 				if (state->guys[i].onElevator){
 					//state->circleSpot = sum(sum(Vector2i{screenWidth/2, screenHeight/2}, elevatorSpotsPos[state->guys[i].elevatorSpot]), Vector2i{11,32});
@@ -740,15 +724,15 @@ void updateAndRender(GameInput* input, GameState* state) {
             }
 
             // Update floor states based on input
-	for (int i = 0; i < 10; i++) {
-		if (input->buttons[i]) {
-			if (!state->moving && i == state->currentFloor) {
-				continue;
-			}
-			// playSound(state->clips, &state->audioFiles.click, 0.5);
-			state->floorStates[i] = !state->floorStates[i];
-		}
-	}
+	    for (int i = 0; i < 10; i++) {
+		    if (input->buttons[i]) {
+			    if (!state->moving && i == state->currentFloor) {
+				    continue;
+			    }
+			    mmEffectEx(&state->audioFiles.click);
+			    state->floorStates[i] = !state->floorStates[i];
+		    }
+	    }
 	
             // Move and calculate getting to floors
             if (!(state->doorTimer.active)) {
@@ -771,9 +755,12 @@ void updateAndRender(GameInput* input, GameState* state) {
                                 state->floorStates[state->currentDestination] = false;
                                 state->doorTimer.active = true;
                                 state->doorTimer.time = DOOR_TIME;
-				//playSound(state->clips, &state->audioFiles.arrival, 0.5);
-				//playSound(state->clips, &state->audioFiles.doorOpen, 0.5);
+			    mmEffectEx(&state->audioFiles.arrival);
+			    mmEffectEx(&state->audioFiles.doorOpen);
                             }
+			    else{
+				    mmEffectEx(&state->audioFiles.passing);
+			    }
                         }
                     }
                     else if (state->direction == 1) {
@@ -787,9 +774,12 @@ void updateAndRender(GameInput* input, GameState* state) {
                                 state->floorStates[state->currentDestination] = false;
                                 state->doorTimer.active = true;
                                 state->doorTimer.time = DOOR_TIME;
-                            	//playSound(state->clips, &state->audioFiles.arrival, 0.5);
-				//playSound(state->clips, &state->audioFiles.doorOpen, 0.5);
+                            	mmEffectEx(&state->audioFiles.arrival);
+				mmEffectEx(&state->audioFiles.doorOpen);
 				}
+			    else{
+				    mmEffectEx(&state->audioFiles.passing);
+			    }
                         }
                     }
                 }

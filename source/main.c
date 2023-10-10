@@ -5,6 +5,10 @@
 #include "graphics.h"
 #include "vector2i.h"
 
+#include <maxmod9.h>
+#include "soundbank.h"
+#include "soundbank_bin.h"
+
 // Sprites
 #include <button_big.h>
 
@@ -12,6 +16,17 @@
 
 int main(void) {
 	GameState state = {};
+
+	mmInitDefaultMem((mm_addr)soundbank_bin);
+
+	mmLoadEffect(SFX_CLICK);
+	mmLoadEffect(SFX_ARRIVAL);
+	mmLoadEffect(SFX_BRAKE);
+	mmLoadEffect(SFX_DOOR_CLOSE);
+	mmLoadEffect(SFX_DOOR_OPEN);
+	mmLoadEffect(SFX_FAIL);
+	mmLoadEffect(SFX_PASSING);
+	mmLoadEffect(SFX_MUSIC);
 
 	powerOn(POWER_ALL_2D);
 	videoSetMode(MODE_0_2D);

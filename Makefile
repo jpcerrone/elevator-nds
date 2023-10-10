@@ -31,7 +31,7 @@ SOURCES  := source
 INCLUDES := include
 DATA     := data
 GRAPHICS := gfx
-AUDIO    :=
+AUDIO    := audio
 ICON     :=
 BG_HACK	 := bgHack
 
