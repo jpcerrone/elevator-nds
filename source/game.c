@@ -755,7 +755,8 @@ void updateAndRender(GameInput* input, GameState* state) {
             
             // Display guys
 	    struct Vector2i waitingGuyPos = { {10}, {16 + floorYOffset + 40 }};
-
+		int yLimitBottom = state->elevatorPosY - FLOOR_SEPARATION / 2 + 64;
+		int yLimitTop = state->elevatorPosY + FLOOR_SEPARATION / 2 - 64;
 	    for(int i = 0;  i < MAX_GUYS_ON_SCREEN; i++){
 		    state->guySprites[i]->visible = false;
 		    state->guys[i].floatingNumber->visible = false;
@@ -763,7 +764,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    }
 		state->dropOffGuySprite->visible = false;
 	    if (state->dropOffTimer.active) {
-                if ((state->dropOffFloor * FLOOR_SEPARATION >= state->elevatorPosY - FLOOR_SEPARATION / 2) && (state->dropOffFloor * FLOOR_SEPARATION <= state->elevatorPosY + FLOOR_SEPARATION / 2)) {
+                if ((state->dropOffFloor * FLOOR_SEPARATION >= yLimitBottom ) && (state->dropOffFloor * FLOOR_SEPARATION <= yLimitTop)) {
 			state->dropOffGuySprite->visible = true;
 			state->dropOffGuySprite->x = waitingGuyPos.x;
 			state->dropOffGuySprite->y = waitingGuyPos.y;
@@ -789,8 +790,8 @@ void updateAndRender(GameInput* input, GameState* state) {
 
                     }
                     else {
-			if ((state->guys[j].currentFloor * FLOOR_SEPARATION >= state->elevatorPosY - FLOOR_SEPARATION / 2) && // If they're on the floor
-				(state->guys[j].currentFloor * FLOOR_SEPARATION <= state->elevatorPosY + FLOOR_SEPARATION / 2)) {
+			if ((state->guys[j].currentFloor * FLOOR_SEPARATION >= yLimitBottom) && // If they're on the floor
+				(state->guys[j].currentFloor * FLOOR_SEPARATION <= yLimitTop)) {
 				state->guySprites[j]->visible = true;
 				state->guySprites[j]->x = waitingGuyPos.x;
 				state->guySprites[j]->y = waitingGuyPos.y;
