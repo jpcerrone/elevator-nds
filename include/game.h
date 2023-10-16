@@ -8,9 +8,6 @@
 #include <fat.h>
 
 #include <maxmod9.h>
-#include "soundbank.h"
-#include "soundbank_bin.h"
-
 
 static const uint16_t GREY = RGB15(13,13,13);
 static const uint16_t BLACK = RGB15(0,0,0);
@@ -148,6 +145,7 @@ typedef struct GameState {
 	struct Sprite* uiGuySprites[10];
 	struct Sprite* arrowSprites[10];
 
+	bool musicPlaying;
 	struct {
 		mm_sound_effect click;
 		mm_sound_effect arrival;
@@ -156,8 +154,6 @@ typedef struct GameState {
 		mm_sound_effect doorOpen;
 		mm_sound_effect fail;
 		mm_sound_effect passing;
-		mm_sound_effect music;
-
 	} audioFiles;
 	/*
 	 *

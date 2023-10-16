@@ -31,8 +31,8 @@
 #include <pressAnyButton.h>
 
 #include <maxmod9.h>
-#include "soundbank.h"
 #include "soundbank_bin.h"
+#include "soundbank.h"
 
 /*
 #include "platform.h"
@@ -339,8 +339,7 @@ void initGameState(GameState *state) {
 	initAudioEffect(&state->audioFiles.doorClose, SFX_DOOR_CLOSE, 127);
 	initAudioEffect(&state->audioFiles.doorOpen, SFX_DOOR_OPEN, 127);
 	initAudioEffect(&state->audioFiles.fail, SFX_FAIL, 127);
-	initAudioEffect(&state->audioFiles.passing, SFX_PASSING, 127);
-	initAudioEffect(&state->audioFiles.music, SFX_MUSIC, 127);
+	initAudioEffect(&state->audioFiles.passing, SFX_PASSING, 255);
 	
 	srand((uint32_t)time(NULL)); // Set random seed
 	state->isInitialized = true;
@@ -456,76 +455,12 @@ void initGameState(GameState *state) {
     memset(state->clips, 0, sizeof(state->clips)); 
 */
     }
-/*
-void renderAudio(uint8_t* globalAudioBuffer, int numFramesAvailable, AudioClip* clips){
-	memset(globalAudioBuffer, 0, numFramesAvailable * 2 * 16 / 8);
-	for(int i=0; i < 11; i++){
-		if (clips[i].active){
-			int16_t* sourceSamples = clips[i].file->samples;
-			uint32_t startingSourceSample = roundFloat(clips[i].progress * clips[i].file->sampleCount);
-			uint32_t endingSourceSample = startingSourceSample + numFramesAvailable * clips[i].file->channels;
-			int16_t* currentSourceSample = sourceSamples + startingSourceSample; 
-            uint16_t samplesRead = 0;
 
-			uint32_t* currentFrame = (uint32_t*)globalAudioBuffer;
-			uint32_t* endingFrame = (uint32_t*)globalAudioBuffer +numFramesAvailable;
-	
-            if (!clips[i].loop && endingSourceSample > clips[i].file->sampleCount) {
-                endingFrame -= (endingSourceSample - clips[i].file->sampleCount)/ clips[i].file->channels;
-                endingSourceSample = clips[i].file->sampleCount;
-            }
-
-	    	while(currentFrame != endingFrame){
-				int16_t* currentDestSample = (int16_t*) currentFrame;	
-				if (clips[i].file->channels == 2){
-					*currentDestSample = (int16_t)clampRangeInt(*currentDestSample + roundFloat(*(currentSourceSample)*clips[i].volume), INT16_MIN, INT16_MAX); 
-
-					currentSourceSample++;
-					currentDestSample++;
-                    *currentDestSample = (int16_t)clampRangeInt(*currentDestSample + roundFloat(*(currentSourceSample)*clips[i].volume), INT16_MIN, INT16_MAX); 
-					currentSourceSample++;
-                    samplesRead += 2;
-                    if (startingSourceSample + samplesRead == clips[i].file->sampleCount)
-                    {
-                        currentSourceSample = clips[i].file->samples;
-                        samplesRead = 0;
-                    }
-                }
-                else { // 1 channel
-                    *currentDestSample += *currentSourceSample;
-					currentDestSample++;
-                    *currentDestSample += *currentSourceSample;
-					currentSourceSample++;
-                    samplesRead++;
-                    if (startingSourceSample + samplesRead == clips[i].file->sampleCount)
-                    {
-                        currentSourceSample = clips[i].file->samples;
-                        samplesRead = 0;
-                    }
-                }
-				currentFrame++;
-			}
-			clips[i].progress = (endingSourceSample) / (float)clips[i].file->sampleCount; 
-			if(clips[i].progress >= 1.0){
-				    if(clips[i].loop){
-					clips[i].progress -= 1.0;
-				    } else{
-			    		clips[i] = {};
-				    }
-		    	}
-             }
-	}
-}
-
-void stopAllAudio(AudioClip* clips){
-	for(int i=0; i < 11; i++){
-		clips[i] = {};
-	}
-}
-
-*/
 void resetGame(GameState *state) {
-    state->score = 0;
+	mmLoad( MOD_MUSIC);
+	mmSetModuleVolume( 512 );
+    mmStart( MOD_MUSIC, MM_PLAY_LOOP );
+        state->score = 0;
     memset(state->floorStates, 0, sizeof(state->floorStates));
     state->elevatorPosY = floorsY[10];
     state->currentFloor = 10;
@@ -557,6 +492,7 @@ void resetGame(GameState *state) {
     }
     loadGameGfx(state);
     //memset(state->floatingNumbers, 0, sizeof(state->floatingNumbers));
+
     
 }
 
@@ -593,6 +529,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    */
 	    for (int i = 0; i < 10; i++) {
 		    if (input->buttons[i]) {
+
 			    resetGame(state);
 			    mmEffectEx(&state->audioFiles.click);
 			    state->currentScreen = GAME;
@@ -600,7 +537,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 			       state->transitionToBlackTimer.time= TRANSITION_TIME;
 			       state->transitionToBlackTimer.active = true;
 			       */
-			    break;
+			    return;
 		    }
 	    }
         }break;        
@@ -684,15 +621,15 @@ void updateAndRender(GameInput* input, GameState* state) {
 					fclose(saveFile);
 				}
 				loadScoreGfx(state);
-
-				state->currentScreen = SCORE;
-				state->scoreTimer.active = true;
+				mmUnload(MOD_MUSIC); // Unload and reload later since both mmStop() and mmPause() aren't working, possible maxmod bug.
+				//mmEffectCancelAll(); 
+					state->currentScreen = SCORE;
+					state->scoreTimer.active = true;
 				state->scoreTimer.time = SCORE_TIME;
 				return;
 				 /* 
 				 */
-				//stopAllAudio(state->clips);
-			    mmEffectEx(&state->audioFiles.brake);
+				mmEffectEx(&state->audioFiles.brake);
 				//state->circleFocusTimer= {true, CIRCLE_TIME};
 				if (state->guys[i].onElevator){
 					//state->circleSpot = sum(sum(Vector2i{screenWidth/2, screenHeight/2}, elevatorSpotsPos[state->guys[i].elevatorSpot]), Vector2i{11,32});

@@ -1,6 +1,8 @@
 build/
 spr/
+samples/
 *.elf
 *.nds
 *.pdn
 *.aseprite
+*.bak

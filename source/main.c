@@ -6,8 +6,8 @@
 #include "vector2i.h"
 
 #include <maxmod9.h>
-#include "soundbank.h"
 #include "soundbank_bin.h"
+#include "soundbank.h"
 
 // Sprites
 #include <button_big.h>
@@ -18,7 +18,7 @@ int main(void) {
 	GameState state = {};
 
 	mmInitDefaultMem((mm_addr)soundbank_bin);
-
+		
 	mmLoadEffect(SFX_CLICK);
 	mmLoadEffect(SFX_ARRIVAL);
 	mmLoadEffect(SFX_BRAKE);
@@ -26,7 +26,6 @@ int main(void) {
 	mmLoadEffect(SFX_DOOR_OPEN);
 	mmLoadEffect(SFX_FAIL);
 	mmLoadEffect(SFX_PASSING);
-	mmLoadEffect(SFX_MUSIC);
 
 	powerOn(POWER_ALL_2D);
 	videoSetMode(MODE_0_2D);
@@ -45,12 +44,12 @@ vramSetBankC(VRAM_C_MAIN_BG_0x06000000);
  *
  *
  */
-	consoleDemoInit();
+	//consoleDemoInit();
 
 		// Sprites
 	oamInit(&oamSub, SpriteMapping_1D_128, false); // Why 128? -> https://www.tumblr.com/altik-0/24833858095/nds-development-some-info-on-sprites?redirect_to=%2Faltik-0%2F24833858095%2Fnds-development-some-info-on-sprites&source=blog_view_login_wall
 	oamInit(&oamMain, SpriteMapping_1D_128, false); 
-	touchPosition touch;
+touchPosition touch;
 	bool lastFramePenDown = false;
 	while(1) {
 		GameInput input = {};
@@ -71,10 +70,10 @@ vramSetBankC(VRAM_C_MAIN_BG_0x06000000);
 		
 		lastFramePenDown = penDown;	
 
+		updateAndRender(&input, &state);
 		// Rendering
 		swiWaitForVBlank(); // TODO Check the orer of evth that follows
 		//consoleClear();
-		updateAndRender(&input, &state);
 		
 		for(int i=0; i < state.spriteCountMain; i++){
 			drawSprite(&state.spritesMain[i]);
