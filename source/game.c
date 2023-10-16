@@ -318,6 +318,9 @@ void initAudioEffect(mm_sound_effect* audioEffect, int id, int volume){
 }
 
 void initGameState(GameState *state) {
+	mmLoad( MOD_MUSIC);
+	mmSetModuleVolume( 512 );
+
 	fatInitDefault();
 	FILE* saveFile = fopen("score.bin", "rb+");
 	if(saveFile != NULL){
@@ -348,17 +351,6 @@ void initGameState(GameState *state) {
     state->transitionToBlackTimer = {};
     state->transitionFromBlackTimer = {};
     state->scoreTimer = {};
-
-    // Load max score
-    FileReadResult scoreResult = state->readFileFunction((char *)SCORE_PATH);
-    if (scoreResult.memory && (scoreResult.size == sizeof(uint32_t))) {
-        state->maxScore = *(uint32_t*)(scoreResult.memory);
-
-    }
-    else {
-        state->maxScore = 0;
-
-    }
     */
 
 	state->flashTextTimer.active = true;
@@ -457,9 +449,7 @@ void initGameState(GameState *state) {
     }
 
 void resetGame(GameState *state) {
-	mmLoad( MOD_MUSIC);
-	mmSetModuleVolume( 512 );
-    mmStart( MOD_MUSIC, MM_PLAY_LOOP );
+	    mmStart( MOD_MUSIC, MM_PLAY_LOOP );
         state->score = 0;
     memset(state->floorStates, 0, sizeof(state->floorStates));
     state->elevatorPosY = floorsY[10];
@@ -621,7 +611,9 @@ void updateAndRender(GameInput* input, GameState* state) {
 					fclose(saveFile);
 				}
 				loadScoreGfx(state);
-				mmUnload(MOD_MUSIC); // Unload and reload later since both mmStop() and mmPause() aren't working, possible maxmod bug.
+				mmEffectEx(&state->audioFiles.brake);
+				mmStop();
+				//mmUnload(MOD_MUSIC); // Unload and reload later since both mmStop() and mmPause() aren't working, possible maxmod bug.
 				//mmEffectCancelAll(); 
 					state->currentScreen = SCORE;
 					state->scoreTimer.active = true;
@@ -629,7 +621,6 @@ void updateAndRender(GameInput* input, GameState* state) {
 				return;
 				 /* 
 				 */
-				mmEffectEx(&state->audioFiles.brake);
 				//state->circleFocusTimer= {true, CIRCLE_TIME};
 				if (state->guys[i].onElevator){
 					//state->circleSpot = sum(sum(Vector2i{screenWidth/2, screenHeight/2}, elevatorSpotsPos[state->guys[i].elevatorSpot]), Vector2i{11,32});
@@ -763,6 +754,8 @@ void updateAndRender(GameInput* input, GameState* state) {
 */
             
             // Display guys
+	    struct Vector2i waitingGuyPos = { {10}, {16 + floorYOffset + 40 }};
+
 	    for(int i = 0;  i < MAX_GUYS_ON_SCREEN; i++){
 		    state->guySprites[i]->visible = false;
 		    state->guys[i].floatingNumber->visible = false;
@@ -772,6 +765,8 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    if (state->dropOffTimer.active) {
                 if ((state->dropOffFloor * FLOOR_SEPARATION >= state->elevatorPosY - FLOOR_SEPARATION / 2) && (state->dropOffFloor * FLOOR_SEPARATION <= state->elevatorPosY + FLOOR_SEPARATION / 2)) {
 			state->dropOffGuySprite->visible = true;
+			state->dropOffGuySprite->x = waitingGuyPos.x;
+			state->dropOffGuySprite->y = waitingGuyPos.y;
                 }
             }
             for (int j = 0; j < MAX_GUYS_ON_SCREEN; j++) {
@@ -796,7 +791,6 @@ void updateAndRender(GameInput* input, GameState* state) {
                     else {
 			if ((state->guys[j].currentFloor * FLOOR_SEPARATION >= state->elevatorPosY - FLOOR_SEPARATION / 2) && // If they're on the floor
 				(state->guys[j].currentFloor * FLOOR_SEPARATION <= state->elevatorPosY + FLOOR_SEPARATION / 2)) {
-				struct Vector2i waitingGuyPos = { {10}, {16 + floorYOffset + 40 }};
 				state->guySprites[j]->visible = true;
 				state->guySprites[j]->x = waitingGuyPos.x;
 				state->guySprites[j]->y = waitingGuyPos.y;

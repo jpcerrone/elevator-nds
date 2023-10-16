@@ -19,6 +19,7 @@ int main(void) {
 
 	mmInitDefaultMem((mm_addr)soundbank_bin);
 		
+	mmLoad(MOD_MUSIC);
 	mmLoadEffect(SFX_CLICK);
 	mmLoadEffect(SFX_ARRIVAL);
 	mmLoadEffect(SFX_BRAKE);
