@@ -53,7 +53,7 @@ typedef struct Guy {
 	int currentFloor;
 
 	float mood; //From MOOD_TIME*3 to MOOD_TIME, 0 is game over
-	struct Sprite* floatingNumber;
+	struct Sprite* rectangleNumber;
 	struct Sprite* rectangle;
 } Guy;
 
@@ -67,6 +67,15 @@ typedef struct Timer{
 	bool active;
 	float time;
 } Timer;
+
+struct FloatingNumber{
+	    bool active;
+	    int value;
+	    int floor;
+	    float offsetY;
+	    struct Vector2i startingPosOffset;
+	    struct Sprite* sprites[4];
+};
 
 typedef struct GameState {
 	bool isInitialized;
@@ -145,6 +154,7 @@ typedef struct GameState {
 	struct Sprite* uiGuySprites[10];
 	struct Sprite* arrowSprites[10];
 
+	struct FloatingNumber floatingNumbers[3];
 	bool musicPlaying;
 	struct {
 		mm_sound_effect click;

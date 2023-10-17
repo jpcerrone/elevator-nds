@@ -1,6 +1,3 @@
-/*
-#include <cstdint>
-*/
 #include <nds.h>
 #include <stdio.h>
 #include <time.h>
@@ -72,6 +69,22 @@ void setNextDirection(GameState *state) {
     }
 }
 
+void spawnFloatingNumber(struct FloatingNumber* floatingNumbers, int floatingNumbersSize, struct Image* font, int value, int floor){
+	for(int i=0; i < floatingNumbersSize; i++){
+		if(!floatingNumbers[i].active){
+			floatingNumbers[i].active = true;
+			floatingNumbers[i].value = value;
+			floatingNumbers[i].floor = floor;
+			floatingNumbers[i].offsetY = 0;
+			floatingNumbers[i].startingPosOffset.x = SCREEN_WIDTH/8 + rand()%15; 
+			floatingNumbers[i].startingPosOffset.y = SCREEN_HEIGHT/3 - rand()%20; 
+			displayNumber(value, floatingNumbers[i].sprites, ARRAY_SIZE(floatingNumbers[i].sprites), font, floatingNumbers[i].startingPosOffset.x, floatingNumbers[i].startingPosOffset.y, 0, 1, true, 7.0);
+			break;
+		}
+	}
+}
+
+
 int getScore(float mood, bool pickingUp) {
     int score = 0;
     switch ((int)(ceil(mood / MOOD_TIME))) {
@@ -107,6 +120,7 @@ void pickAndPlaceGuys(GameState* state) {
 				int score = getScore(state->guys[i].mood, false);
 				state->score += score;
 
+				spawnFloatingNumber(state->floatingNumbers, ARRAY_SIZE(state->floatingNumbers), &state->images.numbersFont6px, score, state->currentFloor);
 				state->elevatorSpots[state->guys[i].elevatorSpot] = false;
 				state->guys[i].active = false;
 				state->guys[i].onElevator = false;
@@ -119,6 +133,7 @@ void pickAndPlaceGuys(GameState* state) {
 					int score = getScore(state->guys[i].mood, true);
 
 					state->score += score;
+					spawnFloatingNumber(state->floatingNumbers, ARRAY_SIZE(state->floatingNumbers), &state->images.numbersFont6px, score, state->currentFloor);
 					state->guys[i].onElevator = true;
 					state->guys[i].mood = MOOD_TIME * 3; // 3 to get all 4 possible mood state's ranges [0..3]
 					state->fullFloors[state->currentFloor] = false;
@@ -295,7 +310,7 @@ void loadScoreGfx(GameState* state){
 		state->uiGuySprites[i]->visible = false;
 		state->arrowSprites[i]->visible = false;
 		state->guySprites[i]->visible = false;
-		state->guys[i].floatingNumber->visible = false;
+		state->guys[i].rectangleNumber->visible = false;
 		state->guys[i].rectangle->visible = false;
 
 	}
@@ -358,6 +373,7 @@ void initGameState(GameState *state) {
 
 	loadMenuGfx(state);
 
+    	memset(state->floatingNumbers, 0, sizeof(state->floatingNumbers));
 
 	// Sprite loading
    	memset(state->spritesSub, 0, sizeof(state->spritesSub)); // CHECK THIS
@@ -423,12 +439,17 @@ void initGameState(GameState *state) {
 	}
 	for(int i=0; i < MAX_GUYS_ON_SCREEN; i++){
 		state->guys[i].rectangle = createSprite(&state->images.rectangle, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 1);
-		state->guys[i].floatingNumber = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2, 0, &oamMain, false, 0);
+		state->guys[i].rectangleNumber = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2, 0, &oamMain, false, 0);
 		state->guys[i].rectangle->paletteIdx = 1;
-	}	
+	}
 	state->levelSprite = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0,0 , 0, &oamMain, false, 0);
 	state->levelSprite->paletteIdx = 1;
-
+	for(int j =0; j < ARRAY_SIZE(state->floatingNumbers); j++){
+		for(int i = 0; i < 4; i++){
+			state->floatingNumbers[j].sprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 0);
+		}
+	}	
+	
     /*
     state->images.ui = loadBMP("../spr/ui.bmp", state->readFileFunction);
     state->images.button = loadBMP("../spr/button.bmp", state->readFileFunction, 2);
@@ -444,7 +465,6 @@ void initGameState(GameState *state) {
     state->images.uiLabels = loadBMP("../spr/uiLabels.bmp", state->readFileFunction, 4);
     state->images.titleLabels = loadBMP("../spr/titleLabels.bmp", state->readFileFunction, 2);
     state->images.rectangle = loadBMP("../spr/rectangle.bmp", state->readFileFunction);
-    memset(state->clips, 0, sizeof(state->clips)); 
 */
     }
 
@@ -480,8 +500,10 @@ void resetGame(GameState *state) {
     for(int i=0; i < 10; i++){
 	state->guys[i].active = false;
     }
+    for(int i=0; i < ARRAY_SIZE(state->floatingNumbers); i++){
+	    state->floatingNumbers[i].active = false;
+    }
     loadGameGfx(state);
-    //memset(state->floatingNumbers, 0, sizeof(state->floatingNumbers));
 
     
 }
@@ -755,11 +777,11 @@ void updateAndRender(GameInput* input, GameState* state) {
             
             // Display guys
 	    struct Vector2i waitingGuyPos = { {10}, {16 + floorYOffset + 40 }};
-		int yLimitBottom = state->elevatorPosY - FLOOR_SEPARATION / 2 + 64;
-		int yLimitTop = state->elevatorPosY + FLOOR_SEPARATION / 2 - 64;
+	    int yLimitBottom = state->elevatorPosY - FLOOR_SEPARATION / 2 + 64;
+	    int yLimitTop = state->elevatorPosY + FLOOR_SEPARATION / 2 - 64;
 	    for(int i = 0;  i < MAX_GUYS_ON_SCREEN; i++){
 		    state->guySprites[i]->visible = false;
-		    state->guys[i].floatingNumber->visible = false;
+		    state->guys[i].rectangleNumber->visible = false;
 		    state->guys[i].rectangle->visible = false;
 	    }
 		state->dropOffGuySprite->visible = false;
@@ -780,10 +802,10 @@ void updateAndRender(GameInput* input, GameState* state) {
 			state->guySprites[j]->x = elevatorGuysOrigin.x - elevatorSpotsPos[state->guys[j].elevatorSpot].x;
 			state->guySprites[j]->y = elevatorGuysOrigin.y - elevatorSpotsPos[state->guys[j].elevatorSpot].y;
 			state->guySprites[j]->priority = (state->guys[j].elevatorSpot < 2) ? 2 : 1;
-			state->guys[j].floatingNumber->visible = true; // NOTE: this could be moved so that it's only calcuated in pickUpAndPlaceGuys() if it ever becaomes a perf problem
-			state->guys[j].floatingNumber->frame = state->guys[j].desiredFloor;
-			state->guys[j].floatingNumber->x = state->guySprites[j]->x + 32;
-			state->guys[j].floatingNumber->y = state->guySprites[j]->y;
+			state->guys[j].rectangleNumber->visible = true; // NOTE: this could be moved so that it's only calcuated in pickUpAndPlaceGuys() if it ever becaomes a perf problem
+			state->guys[j].rectangleNumber->frame = state->guys[j].desiredFloor;
+			state->guys[j].rectangleNumber->x = state->guySprites[j]->x + 32;
+			state->guys[j].rectangleNumber->y = state->guySprites[j]->y;
 			state->guys[j].rectangle->visible = true;
 			state->guys[j].rectangle->x = state->guySprites[j]->x + 32;
 			state->guys[j].rectangle->y = state->guySprites[j]->y;
@@ -795,10 +817,10 @@ void updateAndRender(GameInput* input, GameState* state) {
 				state->guySprites[j]->visible = true;
 				state->guySprites[j]->x = waitingGuyPos.x;
 				state->guySprites[j]->y = waitingGuyPos.y;
-				state->guys[j].floatingNumber->visible = true; // NOTE: this could be moved so that it's only calcuated in pickUpAndPlaceGuys() if it ever becaomes a perf problem
-				state->guys[j].floatingNumber->frame = state->guys[j].desiredFloor;
-				state->guys[j].floatingNumber->x = waitingGuyPos.x + 32;
-				state->guys[j].floatingNumber->y = waitingGuyPos.y;
+				state->guys[j].rectangleNumber->visible = true; // NOTE: this could be moved so that it's only calcuated in pickUpAndPlaceGuys() if it ever becaomes a perf problem
+				state->guys[j].rectangleNumber->frame = state->guys[j].desiredFloor;
+				state->guys[j].rectangleNumber->x = waitingGuyPos.x + 32;
+				state->guys[j].rectangleNumber->y = waitingGuyPos.y;
 			}
 			// Draw UI guys
 			state->uiGuySprites[state->guys[j].currentFloor]->visible = true;
@@ -821,7 +843,24 @@ void updateAndRender(GameInput* input, GameState* state) {
     
 	    // -- Current Floor
 	    displayNumber(state->currentFloor, state->floorIndicatorSprites, ARRAY_SIZE(state->floorIndicatorSprites),  &state->images.numbersFont6px, SCREEN_WIDTH/2.0f + 1, SCREEN_HEIGHT - 16 -4.0f, 0, 1, true, 7.0);
-	    
+	    // Draw floating numbers
+	    int floatingSpeed = 40;
+	    for(int i=0; i < ARRAY_SIZE(state->floatingNumbers); i++){
+		    if(state->floatingNumbers[i].active){
+			    if ((state->floatingNumbers[i].floor * FLOOR_SEPARATION + state->floatingNumbers[i].offsetY >= yLimitBottom) && (state->floatingNumbers[i].floor * FLOOR_SEPARATION + state->floatingNumbers[i].offsetY <= yLimitTop)) {
+				    for(int j=0; j < ARRAY_SIZE(state->floatingNumbers[i].sprites); j++){
+					    state->floatingNumbers[i].sprites[j]->y =(float)state->floatingNumbers[i].startingPosOffset.y - state->floatingNumbers[i].offsetY + floorYOffset;
+				    }
+			    }
+			    else{
+				    state->floatingNumbers[i].active = false;
+				    for(int j=0; j < ARRAY_SIZE(state->floatingNumbers[i].sprites); j++){
+					    state->floatingNumbers[i].sprites[j]->visible = false;				    }
+
+			    }
+			    state->floatingNumbers[i].offsetY += DELTA*floatingSpeed;
+		    }
+	    }
             // --Level
 	    int flashesPerSec = 2; 
 	    if (state->flashTextTimer.active){
