@@ -224,16 +224,23 @@ void loadMenuGfx(GameState* state){
 	dmaCopy(gameColorsNoTransp, SPRITE_PALETTE + 32, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
 
     	// Background loading
-	int bg3 = bgInit(3, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(menuTiles, bgGetGfxPtr(bg3), menuTilesLen);
-	dmaCopy(menuMap, bgGetMapPtr(bg3),  menuMapLen);
+	state->bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(menuTiles, bgGetGfxPtr(state->bg2), menuTilesLen);
+	dmaCopy(menuMap, bgGetMapPtr(state->bg2),  menuMapLen);
+
+	state->bg3 = bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 4 /*the 2k offset into vram the tile map will be placed*/,0 /* the 16k offset into vram the tile graphics data will be placed*/);
+	// VRAM can only be accessed with a 16b pointer, so we have to handle two pixels at a time
+	dmaFillHalfWords( 0x101, bgGetGfxPtr( state->bg3 ), 256 * 192 );
+	bgSetScroll(state->bg3,0, -192);
 
 	int bg1Sub = bgInitSub(1, BgType_Text4bpp, BgSize_T_256x256, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
 	dmaCopy(bottomScreenTiles, bgGetGfxPtr(bg1Sub), bottomScreenTilesLen);
 	dmaCopy(bottomScreenMap, bgGetMapPtr(bg1Sub),  bottomScreenMapLen);
 
-	bgSetPriority(bg1Sub, 1);
-	bgHide(2);
+	bgSetPriority(state->bg3, 0); // Transitions
+	bgSetPriority(state->bg2, 1); 
+	bgSetPriority(bg1Sub, 2);
+	bgHide(1);
 	for(int i = 0; i < 10; i++){
 		state->buttonSprites[i]->visible = true;
 		state->buttonSprites[i]->frame = 0;
@@ -255,16 +262,20 @@ void loadGameGfx(GameState* state){
     	dmaCopy(gameColors, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
 	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
 
-	int bg3 = bgInit(3, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(floor_bTiles, bgGetGfxPtr(bg3), floor_bTilesLen);
-	dmaCopy(floor_bMap, bgGetMapPtr(bg3),  floor_bMapLen);
+	int bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(floor_bTiles, bgGetGfxPtr(bg2), floor_bTilesLen);
+	dmaCopy(floor_bMap, bgGetMapPtr(bg2),  floor_bMapLen);
 
-	int bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x256, 2 /*the 2k offset into vram the tile map will be placed*/,2 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(topScreenTiles, bgGetGfxPtr(bg2), topScreenTilesLen);
-	dmaCopy(topScreenMap, bgGetMapPtr(bg2),  topScreenMapLen);
+	int bg1 = bgInit(1, BgType_Text4bpp, BgSize_T_256x256, 2 /*the 2k offset into vram the tile map will be placed*/,2 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(topScreenTiles, bgGetGfxPtr(bg1), topScreenTilesLen);
+	dmaCopy(topScreenMap, bgGetMapPtr(bg1),  topScreenMapLen);
 
-	bgSetPriority(bg3, 3);
-	bgSetPriority(bg2, 2);
+	bgSetPriority(bg2, 3);
+	bgSetPriority(bg1, 2);
+	bgSetPriority(state->bg3, 0); // Transitions
+
+	dmaFillHalfWords( 0x202, bgGetGfxPtr( state->bg3 ), 256 * 192 );
+	bgSetScroll(state->bg3,0, 0);
 
 	state->doorSpriteBot->visible = true;
 	state->doorSpriteTop->visible = true;
@@ -294,11 +305,15 @@ void loadScoreGfx(GameState* state){
 	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
     	
     	// Background loading
-	int bg3 = bgInit(3, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(scoreTiles, bgGetGfxPtr(bg3), scoreTilesLen);
-	dmaCopy(scoreMap, bgGetMapPtr(bg3),  scoreMapLen);
+	state->bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(scoreTiles, bgGetGfxPtr(state->bg2), scoreTilesLen);
+	dmaCopy(scoreMap, bgGetMapPtr(state->bg2),  scoreMapLen);
+	
+	dmaFillHalfWords( 0x101, bgGetGfxPtr( state->bg3 ), 256 * 192 );
+	bgSetScroll(state->bg3,0, 0);
 
-	bgHide(2);
+	bgSetPriority(state->bg2, 2);
+	bgHide(1);
 	bgHide(5);
 
 	state->doorSpriteBot->visible = false;
@@ -381,9 +396,9 @@ void initGameState(GameState *state) {
 
 	struct Vector2i doorPos = {{SCREEN_CENTER.x - 67}, {SCREEN_CENTER.y - 52}};
     	state->images.door = loadImage((uint8_t*)doorTiles, 64, 64, 2);
-	state->doorSpriteTop = createSprite(&state->images.door, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y, 0, &oamMain, false, 0);
+	state->doorSpriteTop = createSprite(&state->images.door, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y, 0, &oamMain, false, 1);
 	state->images.doorBot = loadImage((uint8_t*)doorBotTiles, 64, 64, 2);
-	state->doorSpriteBot = createSprite(&state->images.doorBot, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y +37, 0, &oamMain, false, 0);
+	state->doorSpriteBot = createSprite(&state->images.doorBot, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y +37, 0, &oamMain, false,10);
 
 	state->images.pressAnyButton = loadImage((uint8_t*)pressAnyButtonTiles, 64, 32, 2);
     	state->images.bigButton = loadImage((uint8_t*)buttonBigTiles, 32, 32, 2);
@@ -393,20 +408,20 @@ void initGameState(GameState *state) {
 	state->images.arrow = loadImage((uint8_t*)arrowTiles, 8, 8, 2);
 
 	struct Vector2i pressAnyButtonPos = {{SCREEN_WIDTH/2 - 64}, {SCREEN_HEIGHT/2 + 48}};
-	state->pressAnyButtonSprite[0] = createSprite(&state->images.pressAnyButton, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, pressAnyButtonPos.x, pressAnyButtonPos.y , 0, &oamMain, true, 0);
-	state->pressAnyButtonSprite[1] = createSprite(&state->images.pressAnyButton, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, pressAnyButtonPos.x + 64, pressAnyButtonPos.y, 1, &oamMain, true, 0);
+	state->pressAnyButtonSprite[0] = createSprite(&state->images.pressAnyButton, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, pressAnyButtonPos.x, pressAnyButtonPos.y , 0, &oamMain, true, 1);
+	state->pressAnyButtonSprite[1] = createSprite(&state->images.pressAnyButton, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, pressAnyButtonPos.x + 64, pressAnyButtonPos.y, 1, &oamMain, true, 1);
 	state->pressAnyButtonSprite[0]->paletteIdx = 1;
 	state->pressAnyButtonSprite[1]->paletteIdx = 1;
 	// Can't collapse these two loops since adding a 16x16 sprite after a 32x32 one screws things up
 	for(int y=0;y < 10; y++){
 		int x = SCREEN_WIDTH/2 - 16;
 		x += (y%2 == 0) ? 14 : -14;
-		state->buttonSprites[9 - y] = createSprite(&state->images.bigButton, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, x, y * 16 + 8, 0, &oamSub, true, 1);
+		state->buttonSprites[9 - y] = createSprite(&state->images.bigButton, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, x, y * 16 + 8, 0, &oamSub, true, 2);
 	}
 	for(int y=0;y < 10; y++){
 		int x = SCREEN_WIDTH/2 - 16;
 		x += (y%2 == 0) ? 14 : -14;
-		state->buttonNumberSprites[9 - y] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, x + 8, y * 16 + 16, 9 - y, &oamSub, true, 0);
+		state->buttonNumberSprites[9 - y] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, x + 8, y * 16 + 16, 9 - y, &oamSub, true, 1);
 		state->buttonNumberSprites[9 - y]->paletteIdx = 1;
 		int uiGuyX = x; 
 		int arrowX = x; 
@@ -418,35 +433,35 @@ void initGameState(GameState *state) {
 			uiGuyX -= 16;
 			arrowX -= 20;
 		}
-		state->uiGuySprites[9 - y] = createSprite(&state->images.uiGuy, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, uiGuyX, y * 16 + 16, 0, &oamSub, false, 0);
-		state->arrowSprites[9 - y] = createSprite(&state->images.arrow, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, arrowX, y * 16 + 24, 0, &oamSub, false, 0);
+		state->uiGuySprites[9 - y] = createSprite(&state->images.uiGuy, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, uiGuyX, y * 16 + 16, 0, &oamSub, false, 1);
+		state->arrowSprites[9 - y] = createSprite(&state->images.arrow, (struct Sprite*)&state->spritesSub, &state->spriteCountSub, arrowX, y * 16 + 24, 0, &oamSub, false, 1);
 	}
 	state->images.guy = loadImage((uint8_t*)guyTiles, 64, 64, 4);
 	for(int i=0; i < MAX_GUYS_ON_SCREEN; i++){
-		state->guySprites[i] = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 0);
+		state->guySprites[i] = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 1);
 	}
 	
-	state->dropOffGuySprite = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2 - 32, 0, &oamMain, false, 0);
+	state->dropOffGuySprite = createSprite(&state->images.guy, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2 - 32, 0, &oamMain, false, 1);
 	flipSprite(state->dropOffGuySprite);
 	for(int i =0; i < ARRAY_SIZE(state->floorIndicatorSprites); i++){
-		state->floorIndicatorSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 0);
+		state->floorIndicatorSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 1);
 	}
 	for(int i =0; i < ARRAY_SIZE(state->scoreSprites); i++){
-		state->scoreSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 0);
-		state->maxScoreSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 0);
+		state->scoreSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 1);
+		state->maxScoreSprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, SCREEN_WIDTH/2 - 8, SCREEN_HEIGHT - 16, 0, &oamMain, false, 1);
 		state->scoreSprites[i]->paletteIdx = 1;
 		state->maxScoreSprites[i]->paletteIdx = 1;
 	}
 	for(int i=0; i < MAX_GUYS_ON_SCREEN; i++){
-		state->guys[i].rectangle = createSprite(&state->images.rectangle, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 1);
-		state->guys[i].rectangleNumber = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2, 0, &oamMain, false, 0);
+		state->guys[i].rectangle = createSprite(&state->images.rectangle, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 2);
+		state->guys[i].rectangleNumber = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, SCREEN_HEIGHT/2, 0, &oamMain, false, 1);
 		state->guys[i].rectangle->paletteIdx = 1;
 	}
-	state->levelSprite = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0,0 , 0, &oamMain, false, 0);
+	state->levelSprite = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0,0 , 0, &oamMain, false, 1);
 	state->levelSprite->paletteIdx = 1;
 	for(int j =0; j < ARRAY_SIZE(state->floatingNumbers); j++){
 		for(int i = 0; i < 4; i++){
-			state->floatingNumbers[j].sprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 0);
+			state->floatingNumbers[j].sprites[i] = createSprite(&state->images.numbersFont6px, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, 0, 0, 0, &oamMain, false, 1);
 		}
 	}	
 	
@@ -512,7 +527,6 @@ void updateAndRender(GameInput* input, GameState* state) {
 	if (!state->isInitialized) {
 		initGameState(state);
        }
-    	//renderAudio(audioBuffer, audioFramesAvailable, state->clips);
         switch (state->currentScreen) {
         case MENU:{
 	    int flashPerSecond = 2; // IMPROVEMNT this doesnt really work for other numbers
@@ -525,38 +539,31 @@ void updateAndRender(GameInput* input, GameState* state) {
 	    bool drawFlash = ((int)roundf(state->flashTextTimer.time*flashPerSecond)) % 2;
 	    state->pressAnyButtonSprite[0]->visible = drawFlash;
 	    state->pressAnyButtonSprite[1]->visible = drawFlash;
-	    /*
+	    
 	    if (state->transitionToBlackTimer.active) {
 		if (state->transitionToBlackTimer.time <= 0){
 			state->transitionToBlackTimer.active = false;
         		state->transitionFromBlackTimer.time= TRANSITION_TIME;
 			state->transitionFromBlackTimer.active = true;
-                    	state->currentScreen = GAME;
-		    	//playMusic(state->clips, &state->audioFiles.music, 0.5);
+                    	resetGame(state);
+			mmEffectEx(&state->audioFiles.click);
+			state->currentScreen = GAME;
+			
 			return;
 		}
                 state->transitionToBlackTimer.time -= DELTA;
 		break; // The actual transition is handled after the switch statement
             }
-	    */
+	    
 	    for (int i = 0; i < 10; i++) {
 		    if (input->buttons[i]) {
-
-			    resetGame(state);
-			    mmEffectEx(&state->audioFiles.click);
-			    state->currentScreen = GAME;
-			    /*
-			       state->transitionToBlackTimer.time= TRANSITION_TIME;
-			       state->transitionToBlackTimer.active = true;
-			       */
+			    state->transitionToBlackTimer.time= TRANSITION_TIME;
+			    state->transitionToBlackTimer.active = true;
 			    return;
 		    }
 	    }
         }break;        
         case GAME:{ 
-
-			  
-
 		if (state->transitionFromBlackTimer.active) {
 			state->transitionFromBlackTimer.time -= DELTA;
 			if (state->transitionFromBlackTimer.time <= 0){
@@ -637,8 +644,11 @@ void updateAndRender(GameInput* input, GameState* state) {
 				mmStop();
 				//mmUnload(MOD_MUSIC); // Unload and reload later since both mmStop() and mmPause() aren't working, possible maxmod bug.
 				//mmEffectCancelAll(); 
-					state->currentScreen = SCORE;
-					state->scoreTimer.active = true;
+				// TODO remove all this once going to circle focus
+				state->transitionToBlackTimer.time= TRANSITION_TIME;
+				state->transitionToBlackTimer.active = true;
+				state->currentScreen = SCORE;
+				state->scoreTimer.active = true;
 				state->scoreTimer.time = SCORE_TIME;
 				return;
 				 /* 
@@ -749,7 +759,7 @@ void updateAndRender(GameInput* input, GameState* state) {
             if (floorYOffset > FLOOR_SEPARATION/2) {
                 floorYOffset = (FLOOR_SEPARATION - floorYOffset) * -1; // Hack to handle negative mod operation.
             }
-	    bgSetScroll(3, 0,-floorYOffset); // Scroll BG3 layer
+	    bgSetScroll(2, 0,-floorYOffset); // Scroll BG3 layer
 	    int doorFrame = (state->doorTimer.active) ? 0 : 1;
 
             state->doorSpriteTop->frame = doorFrame; 
@@ -900,48 +910,36 @@ void updateAndRender(GameInput* input, GameState* state) {
 			   
 			   if (state->scoreTimer.active) {
 				   state->scoreTimer.time -= DELTA;
-				   /*
-				   drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, screenWidth/2.0f, screenHeight/2.0f + 20,0, 2, 0, 1, true);
-				   drawImage(renders, ARRAY_SIZE(renders), &state->images.uiLabels, screenWidth/2.0f, screenHeight/2.0f - 20,0, 3, 0, 1 , true);
-				   drawNumber(state->score,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, screenWidth / 2.0f, screenHeight / 2.0f + 10,0, 1, GREY, true);
-				   drawNumber(state->maxScore,renders, ARRAY_SIZE(renders),  &state->images.numbersFont3px, screenWidth / 2.0f, screenHeight / 2.0f - 30,0, 1, GREY, true);
-				   state->writeScoreFunction((char *)& SCORE_PATH, state->maxScore);
-				   */
 				   if(state->scoreTimer.time < 0){
 					   state->scoreTimer.active = false;
 					   state->scoreTimer.time = 0;
 				   }
 			   }
-			   else{
-				   state->flashTextTimer.active = true;
-				   state->flashTextTimer.active = FLASH_TIME;
-				   loadMenuGfx(state);
-				   state->currentScreen = MENU;
-
-			   }
-			   /*
 			   else if (state->transitionToBlackTimer.active) {
 				   state->transitionToBlackTimer.time -= DELTA;
 				   if(state->transitionToBlackTimer.time < 0){
-					   state->transitionToBlackTimer = {};
-				   }}
+					   state->transitionToBlackTimer.active = false;
+					   state->transitionToBlackTimer.time = 0;
+				   }
+			   }
 			   else {
 				   state->transitionToBlackTimer.active = false;
-				   state->flashTextTimer = {true, FLASH_TIME};
+				   state->flashTextTimer.active = true;
+				   state->flashTextTimer.time = FLASH_TIME;
+				   loadMenuGfx(state);
 				   state->currentScreen = MENU;
 			   } 
-			   */
+			   
 		   }break;
 	}
-	/*
 	// Transitions         
            if (state->transitionToBlackTimer.active) {
-                drawRectangle(bitMapMemory, screenWidth, screenHeight, 0, 0, screenWidth, (int)(screenHeight* (1-state->transitionToBlackTimer.time)), BLACK);
+		bgSetScroll(state->bg3, 0, -SCREEN_HEIGHT + (int)(SCREEN_HEIGHT* (1-state->transitionToBlackTimer.time)));
             }
 	   
+	
 	if (state->transitionFromBlackTimer.active) {
-                    drawRectangle(bitMapMemory, screenWidth, screenHeight, 0, (int)(screenHeight* (1-state->transitionFromBlackTimer.time)), screenWidth, screenHeight , BLACK);
-                }
-		*/
+		bgSetScroll(state->bg3, 0,  (int)(SCREEN_HEIGHT* (1 - state->transitionFromBlackTimer.time)));
+	}
 }
 

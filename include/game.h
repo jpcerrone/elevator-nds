@@ -109,6 +109,11 @@ typedef struct GameState {
 	bool elevatorSpots[ELEVATOR_SPOTS];
 	bool fullFloors[10];
 
+	int bg3;
+	int bg2;
+	int bg1;
+	int bg0;
+
 	struct {
 		struct Image pressAnyButton;
 		struct Image bigButton;

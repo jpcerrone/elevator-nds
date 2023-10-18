@@ -29,7 +29,7 @@ int main(void) {
 	mmLoadEffect(SFX_PASSING);
 
 	powerOn(POWER_ALL_2D);
-	videoSetMode(MODE_0_2D);
+	videoSetMode(MODE_3_2D);
 	videoSetModeSub(MODE_0_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);
 	//vramSetBankA(VRAM_A_MAIN_SPRITE_0x06400000);
@@ -74,7 +74,6 @@ touchPosition touch;
 		updateAndRender(&input, &state);
 		// Rendering
 		swiWaitForVBlank(); // TODO Check the orer of evth that follows
-		//consoleClear();
 		
 		for(int i=0; i < state.spriteCountMain; i++){
 			drawSprite(&state.spritesMain[i]);
