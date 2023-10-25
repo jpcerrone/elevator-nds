@@ -229,17 +229,20 @@ void loadMenuGfx(GameState* state){
 	dmaCopy(menuMap, bgGetMapPtr(state->bg2),  menuMapLen);
 
 	state->bg3 = bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 4 /*the 2k offset into vram the tile map will be placed*/,0 /* the 16k offset into vram the tile graphics data will be placed*/);
-	// VRAM can only be accessed with a 16b pointer, so we have to handle two pixels at a time
-	dmaFillHalfWords( 0x101, bgGetGfxPtr( state->bg3 ), 256 * 192 );
+	dmaFillHalfWords( 0x101, bgGetGfxPtr( state->bg3 ), 256 * 192 ); // VRAM can only be accessed with a 16b pointer, so we have to handle two pixels at a time
 	bgSetScroll(state->bg3,0, -192);
 
-	int bg1Sub = bgInitSub(1, BgType_Text4bpp, BgSize_T_256x256, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(bottomScreenTiles, bgGetGfxPtr(bg1Sub), bottomScreenTilesLen);
-	dmaCopy(bottomScreenMap, bgGetMapPtr(bg1Sub),  bottomScreenMapLen);
+	state->subBg1 = bgInitSub(1, BgType_Text4bpp, BgSize_T_256x256, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaCopy(bottomScreenTiles, bgGetGfxPtr(state->subBg1), bottomScreenTilesLen);
+	dmaCopy(bottomScreenMap, bgGetMapPtr(state->subBg1),  bottomScreenMapLen);
+	
+	state->subBg3 = bgInitSub(3, BgType_Bmp8, BgSize_B8_256x256, 2 ,0 /* the 16k offset into vram the tile graphics data will be placed*/);
+	dmaFillHalfWords( 0x0, bgGetGfxPtr( state->subBg3 ), 256 * 256 ); // VRAM can only be accessed with a 16b pointer, so we have to handle two pixels at a time
 
 	bgSetPriority(state->bg3, 0); // Transitions
 	bgSetPriority(state->bg2, 1); 
-	bgSetPriority(bg1Sub, 2);
+	bgSetPriority(state->subBg1, 2);
+	bgSetPriority(state->subBg3, 0);
 	bgHide(1);
 	for(int i = 0; i < 10; i++){
 		state->buttonSprites[i]->visible = true;
@@ -269,6 +272,8 @@ void loadGameGfx(GameState* state){
 	int bg1 = bgInit(1, BgType_Text4bpp, BgSize_T_256x256, 2 /*the 2k offset into vram the tile map will be placed*/,2 /* the 16k offset into vram the tile graphics data will be placed*/);
 	dmaCopy(topScreenTiles, bgGetGfxPtr(bg1), topScreenTilesLen);
 	dmaCopy(topScreenMap, bgGetMapPtr(bg1),  topScreenMapLen);
+
+	//consoleInit(NULL, 1, BgType_Text4bpp, BgSize_T_256x512,31,0,true, true );
 
 	bgSetPriority(bg2, 3);
 	bgSetPriority(bg1, 2);
@@ -309,8 +314,8 @@ void loadScoreGfx(GameState* state){
 	dmaCopy(scoreTiles, bgGetGfxPtr(state->bg2), scoreTilesLen);
 	dmaCopy(scoreMap, bgGetMapPtr(state->bg2),  scoreMapLen);
 	
-	dmaFillHalfWords( 0x101, bgGetGfxPtr( state->bg3 ), 256 * 192 );
-	bgSetScroll(state->bg3,0, 0);
+	dmaFillHalfWords( 0x202, bgGetGfxPtr( state->bg3 ), 256 * 192 );
+	bgSetScroll(state->bg3,0, -192);
 
 	bgSetPriority(state->bg2, 2);
 	bgHide(1);
@@ -505,11 +510,12 @@ void resetGame(GameState *state) {
     
     state->flashTextTimer.active = false;
     state->flashTextTimer.time = 0;
-    /*
-    state->circleFocusTimer = {};
+    
+    state->circleFocusTimer.active = false;
+    state->circleFocusTimer.time = 0;
 
     state->failSoundPlaying = false;
-*/
+
     memset(state->elevatorSpots, 0, sizeof(state->elevatorSpots));
     memset(state->fullFloors, 0, sizeof(state->fullFloors));
     for(int i=0; i < 10; i++){
@@ -571,25 +577,25 @@ void updateAndRender(GameInput* input, GameState* state) {
 			}
 		}
 		
-/*	
+	
             // Timers
 	    // Circle Focus
-	    	int radius = 13;
+	    	int radius = 20;
 		if (state->circleFocusTimer.active){
+			uint16_t* bgGfxPtr = state->circleScreen ? bgGetGfxPtr(state->bg3) : bgGetGfxPtr(state->subBg3);
 			if (state->circleFocusTimer.time > 2.5) {
 				state->circleFocusTimer.time -= DELTA;
 				return;
 		    } else if (state->circleFocusTimer.time > 2.2) {
 			state->circleFocusTimer.time -= DELTA;
 			float focusPercentage = (state->circleFocusTimer.time- 2.2f)*1.0f/0.3f; 
-			drawFocusCircle(bitMapMemory, state->circleSpot.x, state->circleSpot.y, (int)(focusPercentage*screenHeight/2 + (1 - focusPercentage) * radius), screenWidth, screenHeight);
+			drawFocusCircle(state->circleSpot, (int)(focusPercentage*SCREEN_HEIGHT/2 + (1 - focusPercentage)*radius), bgGfxPtr);
 			return;
 
 			}
 			else if (state->circleFocusTimer.time > 1.4) {
 				state->circleFocusTimer.time -= DELTA;
 				if (state->circleFocusTimer.time < 1.8 && !state->failSoundPlaying){
-					playSound(state->clips, &state->audioFiles.fail, 0.5);
 					mmEffectEx(&state->audioFiles.fail);
 					state->failSoundPlaying = true;
 				}
@@ -598,7 +604,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 			else if (state->circleFocusTimer.time > 1.0) {
 				state->circleFocusTimer.time -= DELTA;
 				float focusPercentage = (state->circleFocusTimer.time-1.0f)/0.4f; 
-				drawFocusCircle(bitMapMemory, state->circleSpot.x, state->circleSpot.y, (int)(focusPercentage*radius), screenWidth, screenHeight);
+				drawFocusCircle(state->circleSpot, (int)(focusPercentage*radius), bgGfxPtr);
 				return;
 			}
 			else if (state->circleFocusTimer.time > 0){
@@ -606,16 +612,18 @@ void updateAndRender(GameInput* input, GameState* state) {
 				return;
 			}
 			else if (state->circleFocusTimer.time < 0) {
-				state->transitionToBlackTimer.time= TRANSITION_TIME;
-				state->transitionToBlackTimer.active = true;
-				state->scoreTimer = {true, SCORE_TIME};
+				//state->transitionToBlackTimer.time= TRANSITION_TIME;
+				//state->transitionToBlackTimer.active = true;
+				state->scoreTimer.active = true;
+				state->scoreTimer.time = SCORE_TIME;
 				state->currentScreen = SCORE;
-				state->circleFocusTimer = {};
+				state->circleFocusTimer.active = false;
+				loadScoreGfx(state);
 				return;
 
 			}
 		}	    
-		*/
+		
             // Doors
             if (state->doorTimer.active) {
                 state->doorTimer.time -= DELTA;
@@ -639,25 +647,22 @@ void updateAndRender(GameInput* input, GameState* state) {
 					fwrite(&state->maxScore, 4, 1, saveFile);
 					fclose(saveFile);
 				}
-				loadScoreGfx(state);
 				mmEffectEx(&state->audioFiles.brake);
 				mmStop();
-				//mmUnload(MOD_MUSIC); // Unload and reload later since both mmStop() and mmPause() aren't working, possible maxmod bug.
-				//mmEffectCancelAll(); 
-				// TODO remove all this once going to circle focus
-				state->transitionToBlackTimer.time= TRANSITION_TIME;
-				state->transitionToBlackTimer.active = true;
-				state->currentScreen = SCORE;
-				state->scoreTimer.active = true;
-				state->scoreTimer.time = SCORE_TIME;
-				return;
-				 /* 
-				 */
-				//state->circleFocusTimer= {true, CIRCLE_TIME};
+				 
+				state->circleFocusTimer.active = true;
+				state->circleFocusTimer.time = CIRCLE_TIME;
+				dmaFillHalfWords( 0x0,  bgGetGfxPtr( state->bg3 ), 256 * 192 );
+				bgSetScroll(state->bg3, 0, 0);
 				if (state->guys[i].onElevator){
-					//state->circleSpot = sum(sum(Vector2i{screenWidth/2, screenHeight/2}, elevatorSpotsPos[state->guys[i].elevatorSpot]), Vector2i{11,32});
+					state->circleScreen = 1;
+					state->circleSpot.x = elevatorGuysOrigin.x - elevatorSpotsPos[state->guys[i].elevatorSpot].x + 34;
+					state->circleSpot.y =  elevatorGuysOrigin.y -  elevatorSpotsPos[state->guys[i].elevatorSpot].y + 24;
 				} else{
-				//state->circleSpot ={ screenWidth-27, (state->guys[i].currentFloor+1)*16 +7};
+					state->circleScreen = 0;
+					state->circleSpot.x = (state->guys[i].currentFloor % 2) ? (SCREEN_WIDTH/2 + 36) : (SCREEN_WIDTH/2 - 36);
+					state->circleSpot.y = (9 - state->guys[i].currentFloor)*16 + 24;
+
 				}
                     return;
                         }
@@ -913,6 +918,9 @@ void updateAndRender(GameInput* input, GameState* state) {
 				   if(state->scoreTimer.time < 0){
 					   state->scoreTimer.active = false;
 					   state->scoreTimer.time = 0;
+					   state->transitionToBlackTimer.active = true;
+					   state->transitionToBlackTimer.time = TRANSITION_TIME;
+
 				   }
 			   }
 			   else if (state->transitionToBlackTimer.active) {

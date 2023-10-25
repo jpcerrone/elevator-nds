@@ -30,7 +30,7 @@ int main(void) {
 
 	powerOn(POWER_ALL_2D);
 	videoSetMode(MODE_3_2D);
-	videoSetModeSub(MODE_0_2D);
+	videoSetModeSub(MODE_3_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);
 	//vramSetBankA(VRAM_A_MAIN_SPRITE_0x06400000);
 	//vramSetBankB(VRAM_B_MAIN_SPRITE_0x06420000);
@@ -45,8 +45,8 @@ vramSetBankC(VRAM_C_MAIN_BG_0x06000000);
  *
  *
  */
-	//consoleDemoInit();
 
+	//consoleDemoInit();
 		// Sprites
 	oamInit(&oamSub, SpriteMapping_1D_128, false); // Why 128? -> https://www.tumblr.com/altik-0/24833858095/nds-development-some-info-on-sprites?redirect_to=%2Faltik-0%2F24833858095%2Fnds-development-some-info-on-sprites&source=blog_view_login_wall
 	oamInit(&oamMain, SpriteMapping_1D_128, false); 

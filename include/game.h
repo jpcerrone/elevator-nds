@@ -24,8 +24,6 @@ static const int FLOOR_SEPARATION = 320;
 static int floorsY[11] = { 0, 320, 640, 960, 1280, 1600, 1920, 2240, 2560, 2880, 3200 };
 const static int REQUIRED_SCORE = 3000;
 
-//static const char SCORE_PATH[MAX_PATH] = "maxScore";// MAX_PATH might be windows only
-
 static const struct Vector2i elevatorSpotsPos[ELEVATOR_SPOTS] = {
     {{-1}, {-30}},
     {{-22}, {-30}},
@@ -100,7 +98,8 @@ typedef struct GameState {
 	Timer flashTextTimer;
 	Timer circleFocusTimer;
 
-	//Vector2i circleSpot;
+	struct Vector2i circleSpot;
+	bool circleScreen;
 	bool failSoundPlaying;
 
 	int dropOffFloor;
@@ -113,6 +112,11 @@ typedef struct GameState {
 	int bg2;
 	int bg1;
 	int bg0;
+	
+	int subBg3;
+	int subBg2;
+	int subBg1;
+	int subBg0;
 
 	struct {
 		struct Image pressAnyButton;

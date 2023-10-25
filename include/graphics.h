@@ -1,6 +1,7 @@
 #pragma once
 #include <nds.h>
 
+#include "vector2i.h"
 #define MAX_SPRITES 10 // TODO increase
 
 struct Image {
@@ -38,5 +39,7 @@ void drawSprite(struct Sprite* sprite);
 void flipSprite(struct Sprite* sprite);
 
 void displayNumber(uint32_t number, struct Sprite* sprites[], uint16_t displaySize, struct Image* font, float x, float y, int priority, int scale, bool centered, float spacing);
+
+void drawFocusCircle(struct Vector2i center, int radius, uint16_t* backgroundPtr);
 
 void setPalette(int index);

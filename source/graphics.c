@@ -1,5 +1,6 @@
 #include "graphics.h"
 #include <math.h>
+#include <stdio.h>
 struct Image loadImage(uint8_t* dataPtr, int width, int height, int frames){
 	struct Image newImage;
 	newImage.width = width;
@@ -119,3 +120,57 @@ void displayNumber(uint32_t number, struct Sprite* sprites[], uint16_t displaySi
 
 }
 
+void drawFocusCircle(struct Vector2i center, int radius, uint16_t* backgroundPtr){
+	sassert(radius >= 0, "negative radius");
+	// VRAM can only be accessed with a 16b pointer, so we have to fill two pixels at a time
+	int twoBlackPixels = 0x0101;
+	int twoTransparentPixels = 0x0000;
+	int oneTransparentOneBlack = 0x0001;
+	int oneBlackOneTransparent = 0x0100;
+
+	// Fill outside of circle with black first
+	dmaFillHalfWords( twoBlackPixels, backgroundPtr, fmax(SCREEN_WIDTH * (center.y-radius), 2));
+	if (center.y + radius < SCREEN_HEIGHT){
+		dmaFillHalfWords( twoBlackPixels, backgroundPtr + SCREEN_WIDTH*(center.y+radius)/2, SCREEN_WIDTH * (SCREEN_HEIGHT - (center.y + radius)));
+	}
+	for(int y=fmax(center.y - radius, 0); y < fmin(center.y +radius, SCREEN_HEIGHT); y++){
+		if (center.x - radius >= 2){ // Having a > 0 could cause the dma copy to try to fill only one pixel and that screws up the filling
+			//iprintf("c %d - r %d - c-r %d\n", center.x, radius, center.x - radius);	
+			dmaFillHalfWords( twoBlackPixels, backgroundPtr + y*SCREEN_WIDTH/2 , center.x - radius);
+		}
+		if (center.x + radius <= SCREEN_WIDTH - 2){
+			dmaFillHalfWords( twoBlackPixels, backgroundPtr + y*SCREEN_WIDTH/2 + (center.x + radius)/2, SCREEN_WIDTH - (center.x + radius));
+		}
+	}
+	
+	// Fill inside circle with transparent palette index
+	int radiusSquared = radius*radius;
+	for(int y=center.y - radius; y < center.y + radius; y++){
+		for(int x=center.x - radius; x < center.x + radius; x+=2){
+			struct Vector2i firstPixel = {{x}, {y}};
+			struct Vector2i secondPixel = {{x + 1}, {y}};
+			if (distanceSquared(firstPixel, center) < radiusSquared){
+				// Filling outside is enough, I don´t neeed to fill the inside since it´s already initialized as transparent
+				if(2*(center.x - x) <= SCREEN_WIDTH-2){
+					dmaFillHalfWords( twoBlackPixels, backgroundPtr + x/2 + y*SCREEN_WIDTH/2 + 2*(center.x - firstPixel.x)/2, SCREEN_WIDTH - 2*(center.x - x)); // Fills row outside of circle
+				}
+				break; 
+			}
+			
+			else if (distanceSquared(secondPixel, center) < radiusSquared){
+				dmaFillHalfWords( oneTransparentOneBlack, backgroundPtr + x/2 + y*SCREEN_WIDTH/2, 2 );
+				if(2*(center.x - secondPixel.x) <= SCREEN_WIDTH-2){
+					dmaFillHalfWords( oneBlackOneTransparent, backgroundPtr + x/2 + y*SCREEN_WIDTH/2 + 2*(center.x - secondPixel.x)/2, 2 );
+					dmaFillHalfWords( twoBlackPixels, backgroundPtr + (x+2)/2 + y*SCREEN_WIDTH/2 + 2*(center.x - secondPixel.x)/2, SCREEN_WIDTH - 2*(center.x - secondPixel.x)); // Fills row outside of circle
+				}
+				break; 
+			} else{
+				if (x >= 0 && x < SCREEN_WIDTH && y >= 0 && y < SCREEN_HEIGHT){
+					dmaFillHalfWords( twoBlackPixels, backgroundPtr + x/2 + y*SCREEN_WIDTH/2, 2 );
+				}
+			}
+		}
+
+	}
+	
+}
