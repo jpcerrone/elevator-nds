@@ -30,10 +30,13 @@ BUILD    := build
 SOURCES  := source
 INCLUDES := include
 DATA     := data
-GRAPHICS := gfx
+#GRAPHICS := gfx
 AUDIO    := audio
 ICON     :=
 BG_HACK	 := bgHack
+
+## Create a gfx library variable
+GFXLIBS     ?= libgfx.a
 
 # specify a directory which contains the nitro filesystem
 # this is relative to the Makefile
@@ -53,7 +56,7 @@ LDFLAGS   = -specs=ds_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project (order is important)
 #---------------------------------------------------------------------------------
-LIBS := -lfat -lnds9 -lm
+LIBS := -lgfx -lfat -lnds9 -lm 
 
 # automatigically add libraries for NitroFS
 ifneq ($(strip $(NITRO)),)
@@ -68,8 +71,7 @@ endif
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS := $(LIBNDS) $(PORTLIBS)
-
+LIBDIRS := $(LIBNDS) $(PORTLIBS) $(CURDIR)/$(BUILD)
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
 # rules for different file extensions
@@ -89,8 +91,7 @@ export DEPSDIR := $(CURDIR)/$(BUILD)
 CFILES   := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES   := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-PNGFILES := $(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
-BMPFILES := $(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.bmp)))
+#BMPFILES := $(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.bmp)))
 BINFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 
 # prepare NitroFS directory
@@ -131,9 +132,9 @@ export OFILES_BIN   :=	$(addsuffix .o,$(BINFILES))
 
 export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
 
-export OFILES := $(BMPFILES:.bmp=.o) $(OFILES_BIN) $(OFILES_SOURCES)
+export OFILES := $(OFILES_BIN) $(OFILES_SOURCES)
 
-export HFILES := $(BMPFILES:.bmp=.h) $(addsuffix .h,$(subst .,_,$(BINFILES)))
+export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES)))
 
 export INCLUDE  := $(foreach dir,$(INCLUDES),-iquote $(CURDIR)/$(dir))\
                    $(foreach dir,$(LIBDIRS),-I$(dir)/include)\
@@ -162,13 +163,13 @@ endif
 
 #---------------------------------------------------------------------------------
 $(BUILD):
-	@mkdir -p $@
-
+	@[ -d $@ ] || mkdir -p $@ 
 	# Copy hand-modified floor_b background into the build folder.
 	# background color for it is changed from magenta (what grit outputs) to black	
 	cp $(BG_HACK)/floor_b.c $(BUILD)/floor_b.c
 	cp $(BG_HACK)/floor_b.h $(BUILD)/floor_b.h	
 
+	@$(MAKE) --no-print-directory -f $(CURDIR)/gfxmake
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
@@ -183,7 +184,7 @@ else
 # main targets
 #---------------------------------------------------------------------------------
 $(OUTPUT).nds: $(OUTPUT).elf $(NITRO_FILES) $(GAME_ICON)
-$(OUTPUT).elf: $(OFILES)
+$(OUTPUT).elf   :   $(OFILES) $(GFXLIBS)
 
 # source files depend on generated headers
 $(OFILES_SOURCES) : $(HFILES)
@@ -210,9 +211,9 @@ $(SOUNDBANK) : $(MODFILES)
 # add additional rules like this for each image extension
 # you use in the graphics folders
 #---------------------------------------------------------------------------------
-%.s %.h: %.bmp %.grit
+#sprites.s spirtes.h: %.bmp 
 #---------------------------------------------------------------------------------
-	grit $< -fts -o$*
+	#grit $< -fts -o$*
 # pS -> shared palette data
 #---------------------------------------------------------------------------------
 # Convert non-GRF game icon to GRF if needed

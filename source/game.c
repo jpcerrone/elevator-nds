@@ -8,24 +8,12 @@
 #include "game.h"
 #include "graphics.h"
 
-// BG
+// Sprites & BG
+#include <all_gfx.h>
+
+// BG special case
 #include <floor_b.c>
 #include <floor_b.h>
-#include <topScreen.h>
-#include <bottomScreen.h>
-#include <menu.h>
-#include <score.h>
-
-// Sprites
-#include <button_big.h>
-#include <door.h>
-#include <doorBot.h>
-#include <guy.h>
-#include <numbersFont6px.h>
-#include <rectangle.h>
-#include <ui-guy.h>
-#include <arrow.h>
-#include <pressAnyButton.h>
 
 #include <maxmod9.h>
 #include "soundbank_bin.h"
@@ -214,8 +202,8 @@ void spawnNewGuy(Guy *guys, bool *fullFloors, int currentFloor) {
 
 void loadMenuGfx(GameState* state){
 
-    	dmaCopy(gameColorsNoTransp, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
-	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
+    	dmaCopy(gameColors, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
+	dmaCopy(gameColors, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
     	
 	dmaCopy(gameColors, SPRITE_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
 	dmaCopy(gameColorsInv, SPRITE_PALETTE_SUB + 16, sizeof(uint16_t) * ARRAY_SIZE(gameColorsInv));
@@ -225,16 +213,16 @@ void loadMenuGfx(GameState* state){
 
     	// Background loading
 	state->bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(menuTiles, bgGetGfxPtr(state->bg2), menuTilesLen);
-	dmaCopy(menuMap, bgGetMapPtr(state->bg2),  menuMapLen);
+	dmaCopy(menuBGTiles, bgGetGfxPtr(state->bg2), menuBGTilesLen);
+	dmaCopy(menuBGMap, bgGetMapPtr(state->bg2),  menuBGMapLen);
 
 	state->bg3 = bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 4 /*the 2k offset into vram the tile map will be placed*/,0 /* the 16k offset into vram the tile graphics data will be placed*/);
 	dmaFillHalfWords( 0x101, bgGetGfxPtr( state->bg3 ), 256 * 192 ); // VRAM can only be accessed with a 16b pointer, so we have to handle two pixels at a time
 	bgSetScroll(state->bg3,0, -192);
 
 	state->subBg1 = bgInitSub(1, BgType_Text4bpp, BgSize_T_256x256, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(bottomScreenTiles, bgGetGfxPtr(state->subBg1), bottomScreenTilesLen);
-	dmaCopy(bottomScreenMap, bgGetMapPtr(state->subBg1),  bottomScreenMapLen);
+	dmaCopy(bottomScreenBGTiles, bgGetGfxPtr(state->subBg1), bottomScreenBGTilesLen);
+	dmaCopy(bottomScreenBGMap, bgGetMapPtr(state->subBg1),  bottomScreenBGMapLen);
 	
 	state->subBg3 = bgInitSub(3, BgType_Bmp8, BgSize_B8_256x256, 2 ,0 /* the 16k offset into vram the tile graphics data will be placed*/);
 	dmaFillHalfWords( 0x0, bgGetGfxPtr( state->subBg3 ), 256 * 256 ); // VRAM can only be accessed with a 16b pointer, so we have to handle two pixels at a time
@@ -261,17 +249,15 @@ void loadMenuGfx(GameState* state){
 }
 void loadGameGfx(GameState* state){
  
-    // BG loading
-    	dmaCopy(gameColors, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColors));
-	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
+	// BG loading
 
 	int bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
 	dmaCopy(floor_bTiles, bgGetGfxPtr(bg2), floor_bTilesLen);
 	dmaCopy(floor_bMap, bgGetMapPtr(bg2),  floor_bMapLen);
 
 	int bg1 = bgInit(1, BgType_Text4bpp, BgSize_T_256x256, 2 /*the 2k offset into vram the tile map will be placed*/,2 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(topScreenTiles, bgGetGfxPtr(bg1), topScreenTilesLen);
-	dmaCopy(topScreenMap, bgGetMapPtr(bg1),  topScreenMapLen);
+	dmaCopy(_topScreenBGTiles, bgGetGfxPtr(bg1), _topScreenBGTilesLen);
+	dmaCopy(_topScreenBGMap, bgGetMapPtr(bg1),  _topScreenBGMapLen);
 
 	//consoleInit(NULL, 1, BgType_Text4bpp, BgSize_T_256x512,31,0,true, true );
 
@@ -279,7 +265,7 @@ void loadGameGfx(GameState* state){
 	bgSetPriority(bg1, 2);
 	bgSetPriority(state->bg3, 0); // Transitions
 
-	dmaFillHalfWords( 0x202, bgGetGfxPtr( state->bg3 ), 256 * 192 );
+	dmaFillHalfWords( 0x101, bgGetGfxPtr( state->bg3 ), 256 * 192 );
 	bgSetScroll(state->bg3,0, 0);
 
 	state->doorSpriteBot->visible = true;
@@ -306,20 +292,16 @@ void loadGameGfx(GameState* state){
 }
 void loadScoreGfx(GameState* state){
 
-    	dmaCopy(gameColorsNoTransp, BG_PALETTE, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
-	dmaCopy(gameColorsNoTransp, BG_PALETTE_SUB, sizeof(uint16_t) * ARRAY_SIZE(gameColorsNoTransp));
-    	
     	// Background loading
 	state->bg2 = bgInit(2, BgType_Text4bpp, BgSize_T_256x512, 0 /*the 2k offset into vram the tile map will be placed*/,1 /* the 16k offset into vram the tile graphics data will be placed*/);
-	dmaCopy(scoreTiles, bgGetGfxPtr(state->bg2), scoreTilesLen);
-	dmaCopy(scoreMap, bgGetMapPtr(state->bg2),  scoreMapLen);
+	dmaCopy(scoreBGTiles, bgGetGfxPtr(state->bg2), scoreBGTilesLen);
+	dmaCopy(scoreBGMap, bgGetMapPtr(state->bg2),  scoreBGMapLen);
 	
-	dmaFillHalfWords( 0x202, bgGetGfxPtr( state->bg3 ), 256 * 192 );
+	dmaFillHalfWords( 0x101, bgGetGfxPtr( state->bg3 ), 256 * 192 );
 	bgSetScroll(state->bg3,0, -192);
 
 	bgSetPriority(state->bg2, 2);
 	bgHide(1);
-	bgHide(5);
 
 	state->doorSpriteBot->visible = false;
 	state->doorSpriteTop->visible = false;
@@ -406,10 +388,10 @@ void initGameState(GameState *state) {
 	state->doorSpriteBot = createSprite(&state->images.doorBot, (struct Sprite*)&state->spritesMain, &state->spriteCountMain, doorPos.x, doorPos.y +37, 0, &oamMain, false,10);
 
 	state->images.pressAnyButton = loadImage((uint8_t*)pressAnyButtonTiles, 64, 32, 2);
-    	state->images.bigButton = loadImage((uint8_t*)buttonBigTiles, 32, 32, 2);
+    	state->images.bigButton = loadImage((uint8_t*)button_bigTiles, 32, 32, 2);
 	state->images.numbersFont6px = loadImage((uint8_t*)numbersFont6pxTiles, 16, 16, 10);
 	state->images.rectangle = loadImage((uint8_t*)rectangleTiles, 16, 16, 1);
-	state->images.uiGuy = loadImage((uint8_t*)uiGuyTiles, 16, 16, 4);
+	state->images.uiGuy = loadImage((uint8_t*)ui_guyTiles, 16, 16, 4);
 	state->images.arrow = loadImage((uint8_t*)arrowTiles, 8, 8, 2);
 
 	struct Vector2i pressAnyButtonPos = {{SCREEN_WIDTH/2 - 64}, {SCREEN_HEIGHT/2 + 48}};
