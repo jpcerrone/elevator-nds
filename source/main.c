@@ -32,19 +32,9 @@ int main(void) {
 	videoSetMode(MODE_3_2D);
 	videoSetModeSub(MODE_3_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);
-	//vramSetBankA(VRAM_A_MAIN_SPRITE_0x06400000);
-	//vramSetBankB(VRAM_B_MAIN_SPRITE_0x06420000);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
 	vramSetBankC(VRAM_C_SUB_BG);
 	vramSetBankD(VRAM_D_SUB_SPRITE);
-/*
- *
- *vramSetBankA(VRAM_A_MAIN_SPRITE_0x06400000);
-vramSetBankB(VRAM_B_MAIN_SPRITE_0x06420000);
-vramSetBankC(VRAM_C_MAIN_BG_0x06000000);
- *
- *
- */
 
 	//consoleDemoInit();
 		// Sprites

@@ -33,7 +33,6 @@ DATA     := data
 #GRAPHICS := gfx
 AUDIO    := audio
 ICON     :=
-BG_HACK	 := bgHack
 
 ## Create a gfx library variable
 GFXLIBS     ?= libgfx.a
@@ -164,10 +163,6 @@ endif
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@ 
-	# Copy hand-modified floor_b background into the build folder.
-	# background color for it is changed from magenta (what grit outputs) to black	
-	cp $(BG_HACK)/floor_b.c $(BUILD)/floor_b.c
-	cp $(BG_HACK)/floor_b.h $(BUILD)/floor_b.h	
 
 	@$(MAKE) --no-print-directory -f $(CURDIR)/gfxmake
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile

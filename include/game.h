@@ -25,11 +25,11 @@ static int floorsY[11] = { 0, 320, 640, 960, 1280, 1600, 1920, 2240, 2560, 2880,
 const static int REQUIRED_SCORE = 3000;
 
 static const struct Vector2i elevatorSpotsPos[ELEVATOR_SPOTS] = {
-    {{-1}, {-30}},
-    {{-22}, {-30}},
-    {{-31}, {-37}},
-    {{11}, {-37}},
-    {{ -10}, {-37}},
+    {{-11}, {-30}},
+    {{-32}, {-30}},
+    {{-41}, {-37}},
+    {{1}, {-37}},
+    {{ -20}, {-37}},
 };
 
 static const float SPAWN_TIMES[13] = { 8, 6.5f, 5.0f, 5.5f, 4.0f, 3.6f, 3.2f, 3, 2.9f, 2.8f, 2.7f, 2.6f, 2.5f };
@@ -45,7 +45,6 @@ typedef struct Guy {
 	bool active;
 
 	bool onElevator;
-	int elevatorSpot;
 
 	int desiredFloor;
 	int currentFloor;
@@ -105,7 +104,7 @@ typedef struct GameState {
 	int dropOffFloor;
 
 	Guy guys[MAX_GUYS_ON_SCREEN];
-	bool elevatorSpots[ELEVATOR_SPOTS];
+	Guy* elevatorSpots[ELEVATOR_SPOTS];
 	bool fullFloors[10];
 
 	int bg3;
@@ -128,21 +127,7 @@ typedef struct GameState {
 		struct Image rectangle;
 		struct Image uiGuy;
 		struct Image arrow;
-		/*
-		   Image ui;
-		   Image button;
-		   Image uiBottom;
-		   Image elevator;
-		   Image elevatorF;
-		   Image floorB;
-		   Image floor;
-		   Image vigasB;
-		   Image vigasF;
-		   Image numbersFont3px;
-		   Image numbersFont4px;
-		   Image uiLabels;
-		   Image titleLabels;
-		   */
+		struct Image scoreBoard;
 	} images;
 	struct Sprite spritesMain[128]; 
 	struct Sprite spritesSub[64]; 
@@ -154,16 +139,20 @@ typedef struct GameState {
 	struct Sprite* doorSpriteTop;
 	struct Sprite* buttonSprites[10];
 	struct Sprite* buttonNumberSprites[10];
-	struct Sprite* guySprites[MAX_GUYS_ON_SCREEN];
-	struct Sprite* dropOffGuySprite;
+	struct Sprite* dropOffGuySprite; // TODO add more?
 	struct Sprite* floorIndicatorSprites[2];
 	struct Sprite* scoreSprites[6]; // Used during game and for score screen.
 	struct Sprite* maxScoreSprites[6]; 
 	struct Sprite* levelSprite;
 	struct Sprite* uiGuySprites[10];
 	struct Sprite* arrowSprites[10];
+	struct Sprite* scoreBoardSprites[4];
+
+	struct Sprite* floorGuySprites[10];
+	struct Sprite* elevatorGuySprites[5];
 
 	struct FloatingNumber floatingNumbers[3];
+
 	bool musicPlaying;
 	struct {
 		mm_sound_effect click;
