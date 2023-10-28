@@ -550,7 +550,6 @@ void updateAndRender(GameInput* input, GameState* state) {
         		state->transitionFromBlackTimer.time= TRANSITION_TIME;
 			state->transitionFromBlackTimer.active = true;
                     	resetGame(state);
-			mmEffectEx(&state->audioFiles.click);
 			state->currentScreen = GAME;
 			
 			return;
@@ -563,6 +562,9 @@ void updateAndRender(GameInput* input, GameState* state) {
 		    if (input->buttons[i]) {
 			    state->transitionToBlackTimer.time= TRANSITION_TIME;
 			    state->transitionToBlackTimer.active = true;
+			    mmEffectEx(&state->audioFiles.click);
+			    state->buttonSprites[i]->frame = 1;
+			    state->buttonNumberSprites[i]->paletteIdx = 0;
 			    return;
 		    }
 	    }

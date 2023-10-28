@@ -36,32 +36,31 @@ int main(void) {
 	vramSetBankC(VRAM_C_SUB_BG);
 	vramSetBankD(VRAM_D_SUB_SPRITE);
 
-	//consoleDemoInit();
-		// Sprites
+	// Sprites
 	oamInit(&oamSub, SpriteMapping_1D_128, false); // Why 128? -> https://www.tumblr.com/altik-0/24833858095/nds-development-some-info-on-sprites?redirect_to=%2Faltik-0%2F24833858095%2Fnds-development-some-info-on-sprites&source=blog_view_login_wall
 	oamInit(&oamMain, SpriteMapping_1D_128, false); 
-touchPosition touch;
 	bool lastFramePenDown = false;
 	while(1) {
 		GameInput input = {};
 
 		// Touch controls
+		touchPosition touch;
 		touchRead(&touch);
 		bool penDown = (touch.px != 0) || (touch.py != 0);
-		
-		if (penDown && !lastFramePenDown){
-			for(int i=0; i < 10; i++){ // TODO: This could be done with a radius for more circular precision
-				if ((touch.px >= state.buttonSprites[i]->x) && (touch.px <= state.buttonSprites[i]->x + state.buttonSprites[i]->image->width)){
-					if ((touch.py >= state.buttonSprites[i]->y) && (touch.py <= state.buttonSprites[i]->y + state.buttonSprites[i]->image->height)){
+		if (state.isInitialized && penDown && !lastFramePenDown){
+			struct Vector2i touchVec = {{touch.px}, {touch.py}};
+			int radiusSquared = state.buttonSprites[0]->image->width/2 * state.buttonSprites[0]->image->width/2;
+			for(int i=0; i < 10; i++){ 
+				struct Vector2i buttonMiddle = {{state.buttonSprites[i]->x + state.buttonSprites[i]->image->width/2}, {state.buttonSprites[i]->y + state.buttonSprites[i]->image->height/2}};
+				if (distanceSquared(touchVec, buttonMiddle) <= radiusSquared){
 						input.buttons[i] = true; 
-					}
 				}
 			}
 		}
-		
 		lastFramePenDown = penDown;	
 
 		updateAndRender(&input, &state);
+
 		// Rendering
 		swiWaitForVBlank(); // TODO Check the orer of evth that follows
 		
