@@ -39,7 +39,7 @@ static const float DROP_OFF_TIME = 1.0f;
 static const float TRANSITION_TIME = 1.0f;
 static const float SCORE_TIME = 3.0f;
 static const float FLASH_TIME = 3.0f;
-static const float CIRCLE_TIME = 3.2f;
+static const float CIRCLE_TIME = 4.2f;
 
 typedef struct Guy {
 	bool active;

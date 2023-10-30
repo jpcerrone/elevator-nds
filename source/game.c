@@ -352,12 +352,12 @@ void initAudioEffect(mm_sound_effect* audioEffect, int id, int volume){
 	audioEffect->rate = 1024; // 1024 -> Take input file rate
 	audioEffect->handle = 0; // 0 -> Allocate new handle
 	audioEffect->volume = volume;
-	audioEffect->panning = 127;
+	audioEffect->panning = 100;
 }
 
 void initGameState(GameState *state) {
 	mmLoad( MOD_MUSIC);
-	mmSetModuleVolume( 512 );
+	mmSetModuleVolume(256);
 
 	fatInitDefault();
 	FILE* saveFile = fopen("score.bin", "rb+"); // NOTE: this method of saving only works for flashcarts
@@ -374,13 +374,13 @@ void initGameState(GameState *state) {
 	}
 	fclose(saveFile);
 	
-	initAudioEffect(&state->audioFiles.click, SFX_CLICK, 127);
-	initAudioEffect(&state->audioFiles.arrival, SFX_ARRIVAL, 127);
-	initAudioEffect(&state->audioFiles.brake, SFX_BRAKE, 127);
+	initAudioEffect(&state->audioFiles.click, SFX_CLICK, 180);
+	initAudioEffect(&state->audioFiles.arrival, SFX_ARRIVAL, 80);
+	initAudioEffect(&state->audioFiles.brake, SFX_BRAKE, 255);
 	initAudioEffect(&state->audioFiles.doorClose, SFX_DOOR_CLOSE, 127);
 	initAudioEffect(&state->audioFiles.doorOpen, SFX_DOOR_OPEN, 127);
-	initAudioEffect(&state->audioFiles.fail, SFX_FAIL, 127);
-	initAudioEffect(&state->audioFiles.passing, SFX_PASSING, 255);
+	initAudioEffect(&state->audioFiles.fail, SFX_FAIL, 255);
+	initAudioEffect(&state->audioFiles.passing, SFX_PASSING, 235);
 	
 	srand((uint32_t)time(NULL)); // Set random seed
 	state->isInitialized = true;
@@ -551,7 +551,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 			state->transitionFromBlackTimer.active = true;
                     	resetGame(state);
 			state->currentScreen = GAME;
-			
+			mmEffectEx(&state->audioFiles.doorOpen);
 			return;
 		}
                 state->transitionToBlackTimer.time -= DELTA;
@@ -576,22 +576,19 @@ void updateAndRender(GameInput* input, GameState* state) {
 				state->transitionFromBlackTimer.active = false;
 			}
 		}
-		/*
-		for(int i=0; i < 5; i++)
-			iprintf("%d - ", state->elevatorGuySprites[0]->visible);	
-		iprintf("\n");	
-		*/
+
             // Timers
 	    // Circle Focus
 	    	int radius = 20;
 		if (state->circleFocusTimer.active){
 			uint16_t* bgGfxPtr = state->circleScreen ? bgGetGfxPtr(state->bg3) : bgGetGfxPtr(state->subBg3);
-			if (state->circleFocusTimer.time > 2.5) {
+			if (state->circleFocusTimer.time > 3.0) {
 				state->circleFocusTimer.time -= DELTA;
 				return;
-		    } else if (state->circleFocusTimer.time > 2.2) {
+		    } else if (state->circleFocusTimer.time > 2.7) {
+			    bgHide(0); // Hide foreground BG so that nothing shows up in front of the guy´s faces.
 			state->circleFocusTimer.time -= DELTA;
-			float focusPercentage = (state->circleFocusTimer.time- 2.2f)*1.0f/0.3f; 
+			float focusPercentage = (state->circleFocusTimer.time- 2.7f)*1.0f/0.3f; 
 			state->levelSprite->visible = false; // We´re out of layers, these numbers are in the front and we need to draw the circle transition above them, so hiding them solves the problem.
 			if (state->circleScreen){ // TODO rename for circleTopScreen or sth
 				for(int i=0; i < ARRAY_SIZE(state->scoreSprites); i++){
@@ -605,9 +602,9 @@ void updateAndRender(GameInput* input, GameState* state) {
 			return;
 
 			}
-			else if (state->circleFocusTimer.time > 1.4) {
+			else if (state->circleFocusTimer.time > 1.8) {
 				state->circleFocusTimer.time -= DELTA;
-				if (state->circleFocusTimer.time < 1.8 && !state->failSoundPlaying){
+				if (state->circleFocusTimer.time < 2.0 && !state->failSoundPlaying){
 					mmEffectEx(&state->audioFiles.fail);
 					state->failSoundPlaying = true;
 				}
@@ -615,7 +612,7 @@ void updateAndRender(GameInput* input, GameState* state) {
 			}
 			else if (state->circleFocusTimer.time > 1.0) {
 				state->circleFocusTimer.time -= DELTA;
-				float focusPercentage = (state->circleFocusTimer.time-1.0f)/0.4f; 
+				float focusPercentage = (state->circleFocusTimer.time-1.0f)/0.8f; 
 				drawFocusCircle(state->circleSpot, (int)(focusPercentage*radius), bgGfxPtr);
 				return;
 			}
