@@ -10,7 +10,6 @@ struct Vector2i {
     };
 };
 
-
 struct Vector2i sum(struct Vector2i v0, struct Vector2i v1);
 
 struct Vector2i sub(struct Vector2i v0, struct Vector2i v1);

@@ -1,6 +1,8 @@
 #include "graphics.h"
+
 #include <math.h>
 #include <stdio.h>
+
 struct Image loadImage(uint8_t* dataPtr, int width, int height, int frames){
 	struct Image newImage;
 	newImage.width = width;
@@ -11,7 +13,6 @@ struct Image loadImage(uint8_t* dataPtr, int width, int height, int frames){
 }
 
 struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* spriteCount, int x, int y, int frame, OamState* screen, bool visible, int priority){
-	// sassert(spriteCount < MAX_SPRITES, "Sprite count already at maximum value");	
 	sprites[*spriteCount].x = x;
 	sprites[*spriteCount].y = y;
 	sprites[*spriteCount].image = image;
@@ -45,7 +46,7 @@ struct Sprite* createSprite(struct Image* image, struct Sprite sprites[], int* s
 
 void drawSprite(struct Sprite* sprite){
 	dmaCopy(sprite->image->pixelPointer + sprite->frame*sprite->image->width*sprite->image->height/2, sprite->oamPtr, sprite->image->width*sprite->image->height); // Here i divide by 2 cuz at 16colors (4bit) each byte of dataPtr contains 2 pixels
-	SpriteSize size; // TODO ADD TO SPRITE STRUCT
+	SpriteSize size;
 	if (sprite->image->width == 64 && sprite->image->height == 64){
 		size = SpriteSize_64x64;
 	}
@@ -111,20 +112,15 @@ void displayNumber(uint32_t number, struct Sprite* sprites[], uint16_t displaySi
 	    sprites[i]->x = x + i * digitSeparation;
 	    sprites[i]->y = y;
 	    sprites[i]->frame = digits[displaySize - digitsToDraw + i];
-	    sprites[i]->flipH = false; //IMPROVEMENT add parameter to drawNumberCall
-	    //sprites[i]->scale = scale;
-	    //sprites[i]->centered = centered;
+	    sprites[i]->flipH = false;
 	    sprites[i]->priority = priority; 
-	    //sprites[i]->recolor = color;	
     }	
-
 }
 
 void drawFocusCircle(struct Vector2i center, int radius, uint16_t* backgroundPtr){
 	sassert(radius >= 0, "negative radius");
 	// VRAM can only be accessed with a 16b pointer, so we have to fill two pixels at a time
 	int twoBlackPixels = 0x0101;
-	int twoTransparentPixels = 0x0000;
 	int oneTransparentOneBlack = 0x0001;
 	int oneBlackOneTransparent = 0x0100;
 
@@ -135,7 +131,6 @@ void drawFocusCircle(struct Vector2i center, int radius, uint16_t* backgroundPtr
 	}
 	for(int y=fmax(center.y - radius, 0); y < fmin(center.y +radius, SCREEN_HEIGHT); y++){
 		if (center.x - radius >= 2){ // Having a > 0 could cause the dma copy to try to fill only one pixel and that screws up the filling
-			//iprintf("c %d - r %d - c-r %d\n", center.x, radius, center.x - radius);	
 			dmaFillHalfWords( twoBlackPixels, backgroundPtr + y*SCREEN_WIDTH/2 , center.x - radius);
 		}
 		if (center.x + radius <= SCREEN_WIDTH - 2){

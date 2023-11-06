@@ -1,69 +1,35 @@
 #pragma once
-//#include "platform.h"
+
 #include "graphics.h"
-//#include "math.h"
 #include "vector2i.h"
-//#include "audio.c"
 
 #include <fat.h>
 
 #include <maxmod9.h>
 
-static const uint16_t GREY = RGB15(13,13,13);
-static const uint16_t BLACK = RGB15(0,0,0);
-static const uint16_t MAGENTA = RGB15(31,0,31);
-
-static uint16_t gameColors[3] = {MAGENTA, BLACK, GREY};
-static uint16_t gameColorsInv[3] = {MAGENTA, GREY, BLACK};
-static uint16_t gameColorsNoTransp[2] = {BLACK, GREY};
-
 #define MAX_GUYS_ON_SCREEN 10
 #define ELEVATOR_SPOTS 5
-static const float STARTING_SPEED = 150;
-static const int FLOOR_SEPARATION = 320;
-static int floorsY[11] = { 0, 320, 640, 960, 1280, 1600, 1920, 2240, 2560, 2880, 3200 };
-const static int REQUIRED_SCORE = 3000;
 
-static const struct Vector2i elevatorSpotsPos[ELEVATOR_SPOTS] = {
-    {{-11}, {-30}},
-    {{-32}, {-30}},
-    {{-41}, {-37}},
-    {{1}, {-37}},
-    {{ -20}, {-37}},
-};
-
-static const float SPAWN_TIMES[13] = { 8, 6.5f, 5.0f, 5.5f, 4.0f, 3.6f, 3.2f, 3, 2.9f, 2.8f, 2.7f, 2.6f, 2.5f };
-static const float MOOD_TIME = 4.0f;
-static const float DOOR_TIME = 0.5f;
-static const float DROP_OFF_TIME = 1.0f;
-static const float TRANSITION_TIME = 1.0f;
-static const float SCORE_TIME = 3.0f;
-static const float FLASH_TIME = 3.0f;
-static const float CIRCLE_TIME = 4.2f;
-
-typedef struct Guy {
+struct Guy {
 	bool active;
-
 	bool onElevator;
-
 	int desiredFloor;
 	int currentFloor;
-
-	float mood; //From MOOD_TIME*3 to MOOD_TIME, 0 is game over
+	float mood; // From MOOD_TIME*3 to MOOD_TIME, 0 is game over
 	struct Sprite* rectangleNumber;
 	struct Sprite* rectangle;
-} Guy;
+};
 
-typedef enum Screen {
+enum Screen {
     MENU,
     GAME,
     SCORE,
-} Screen;
+};
 
-typedef struct Timer{
+struct Timer{
 	bool active;
 	float time;
-} Timer;
+};
 
 struct FloatingNumber{
 	    bool active;
@@ -74,9 +40,8 @@ struct FloatingNumber{
 	    struct Sprite* sprites[4];
 };
 
-typedef struct GameState {
-	bool isInitialized;
-	Screen currentScreen;
+struct GameState {
+	enum Screen currentScreen;
 	int score;
 	int maxScore;
 	bool floorStates[11]; // 0 is the index for floor 0, 10 is the index for floor 9, there's a starting floor 10.
@@ -88,30 +53,30 @@ typedef struct GameState {
 	bool moving;
 	int currentLevel;
 
-	Timer spawnTimer;
-	Timer doorTimer;
-	Timer dropOffTimer;
-	Timer transitionToBlackTimer;
-	Timer transitionFromBlackTimer;
-	Timer scoreTimer;
-	Timer flashTextTimer;
-	Timer circleFocusTimer;
+	struct Timer spawnTimer;
+	struct Timer doorTimer;
+	struct Timer dropOffTimer;
+	struct Timer transitionToBlackTimer;
+	struct Timer transitionFromBlackTimer;
+	struct Timer scoreTimer;
+	struct Timer flashTextTimer;
+	struct Timer circleFocusTimer;
 
 	struct Vector2i circleSpot;
-	bool circleScreen;
+	bool circleOnTopScreen;
 	bool failSoundPlaying;
 
 	int dropOffFloor;
 
-	Guy guys[MAX_GUYS_ON_SCREEN];
-	Guy* elevatorSpots[ELEVATOR_SPOTS];
+	struct Guy guys[MAX_GUYS_ON_SCREEN];
+	struct Guy* elevatorSpots[ELEVATOR_SPOTS];
 	bool fullFloors[10];
 
+	// Id´s for backgrounds
 	int bg3;
 	int bg2;
 	int bg1;
 	int bg0;
-	
 	int subBg3;
 	int subBg2;
 	int subBg1;
@@ -134,23 +99,24 @@ typedef struct GameState {
 	int spriteCountMain;
 	int spriteCountSub;
 
-	struct Sprite* pressAnyButtonSprite[2];
-	struct Sprite* doorSpriteBot; // TODO merge into sprites struct?
-	struct Sprite* doorSpriteTop;
-	struct Sprite* buttonSprites[10];
-	struct Sprite* buttonNumberSprites[10];
-	struct Sprite* dropOffGuySprite; // TODO add more?
-	struct Sprite* floorIndicatorSprites[2];
-	struct Sprite* scoreSprites[6]; // Used during game and for score screen.
-	struct Sprite* maxScoreSprites[6]; 
-	struct Sprite* levelSprite;
-	struct Sprite* uiGuySprites[10];
-	struct Sprite* arrowSprites[10];
-	struct Sprite* scoreBoardSprites[4];
-
-	struct Sprite* floorGuySprites[10];
-	struct Sprite* elevatorGuySprites[5];
-
+	struct {
+		struct Sprite* pressAnyButton[2];
+		struct Sprite* doorBot;
+		struct Sprite* doorTop;
+		struct Sprite* button[10];
+		struct Sprite* buttonNumber[10];
+		struct Sprite* dropOffGuy;
+		struct Sprite* floorIndicator[2];
+		struct Sprite* score[6]; // Used during game and for score screen.
+		struct Sprite* maxScore[6]; 
+		struct Sprite* level; // Delete?
+		struct Sprite* uiGuy[10];
+		struct Sprite* arrow[10];
+		struct Sprite* scoreBoard[4];
+		struct Sprite* floorGuy[10];
+		struct Sprite* elevatorGuy[5];
+	} sprites;
+	
 	struct FloatingNumber floatingNumbers[3];
 
 	bool musicPlaying;
@@ -163,19 +129,11 @@ typedef struct GameState {
 		mm_sound_effect fail;
 		mm_sound_effect passing;
 	} audioFiles;
-	/*
-	 *
-	 struct audioFiles_t {
-	 AudioFile music;
-	 	 };
-	 audioFiles_t audioFiles;
 
-	 AudioClip clips[11];
-	 */   
-} GameState;
+};
 
 
-typedef struct GameInput {
+struct GameInput {
     union {
         bool buttons[10];
         struct {
@@ -192,8 +150,7 @@ typedef struct GameInput {
         };
     };
 
-} GameInput;
+};
 
-
-void updateAndRender(GameInput* input, GameState* state);
-
+void initGameState(struct GameState *state);
+void updateAndRender(struct GameInput* input, struct GameState* state);

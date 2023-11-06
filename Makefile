@@ -7,8 +7,8 @@ $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>dev
 endif
 
 # These set the information text in the nds file
-#GAME_TITLE     := My Wonderful Homebrew
-#GAME_SUBTITLE1 := built with devkitARM
+GAME_TITLE     := Elevator
+GAME_SUBTITLE1 := by jpcerrone
 #GAME_SUBTITLE2 := http://devitpro.org
 
 include $(DEVKITARM)/ds_rules

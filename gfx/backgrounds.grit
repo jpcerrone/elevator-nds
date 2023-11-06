@@ -7,4 +7,5 @@
 # Set the bit depth to 4
 -gB4
 
+# Include map in output. Enables tile-mapping of the image.
 -m

@@ -2,7 +2,6 @@
 #include <nds.h>
 
 #include "vector2i.h"
-#define MAX_SPRITES 10 // TODO increase
 
 struct Image {
     uint8_t* pixelPointer;
@@ -23,11 +22,6 @@ struct Sprite{
 	int priority; // 0(highest) - 3(lowest)
 	bool flipH;
 	int paletteIdx;
-	/*
-	int scale;
-	bool centered;
-	uint32_t recolor;
-	*/
 };
 
 struct Image loadImage(uint8_t* dataPtr, int width, int height, int frames);
