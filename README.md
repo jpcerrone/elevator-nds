@@ -2,6 +2,8 @@
 
 Written in C using devkitpro + libnds + maxmod.
 
+Youtube devlog: [https://youtu.be/tmKcgSL6wPA?si=uZiMQEB-dOOpAfwF](url)
+
 ![gameplay](https://github.com/jpcerrone/elevator-nds/blob/master/ReadmeDemo.gif)
 
 ## This port serves as an example for doing some cool things in libnds like:
