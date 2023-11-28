@@ -2,7 +2,7 @@
 
 Written in C using devkitpro + libnds + maxmod.
 
-Youtube devlog: [https://youtu.be/tmKcgSL6wPA?si=uZiMQEB-dOOpAfwF](url)
+Youtube devlog: https://youtu.be/tmKcgSL6wPA?si=uZiMQEB-dOOpAfwF
 
 ![gameplay](https://github.com/jpcerrone/elevator-nds/blob/master/ReadmeDemo.gif)
 
